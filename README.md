@@ -53,6 +53,8 @@ Objective: build a tool for fighting gamers to become better fighters without ha
 Help needed for: built-in Settings & Functions menus, built-in virtual gamepads besides virtual xbox 360 controller (BotController), auto updater (updater.py), joystick recorders that convert input to notation, notation cursor to show what notation is being played in the script (while playing), object detection feature that can accurately predict the X,Y coordinates of each player (for direction detection, hit-boxes, etc.) using ONLY pixel data, health bar readers using ONLY pixel data, and more. Feel free to think of your own ideas for improving Sparlab!  
 
 
+How to run from Command Line: python .\sparlab.py
+
 Build/Distrib. 
 
 Make sure you have all packages installed, including cx_Freeze. 
