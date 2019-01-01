@@ -1,0 +1,9 @@
+[ ]
+
+1) focusH .10s dd .38s 2 .25s exgh , .38s dd .38s sm 
+2) focusH .10s dd .38s 2 .25s exgh , .38s dd .38s extz 
+3) focusH .10s dd .38s 2 .25s exgh , .38s dd .38s exgs
+4)  focusH .10s dd .38s 2 .25s exgh , .38s dd .38s kr  
+
+.815s dd ! dt .815s gh , @ dt
+fps = 60 , ADI = 0.02 , $ = 0.00 , ! = .09 , @ = 0.25

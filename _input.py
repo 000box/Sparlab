@@ -19,7 +19,9 @@ class Session_Thread(multiprocessing.Process):
         self.running = True
         self.playing = False
         self.hks_on = False
+        self.hks_enabled = False
         self.rest = True
+
         # ignore action interval (set to False at end of loops)
         self.iai = False
         #holds all hotkeys
@@ -52,6 +54,10 @@ class Session_Thread(multiprocessing.Process):
                     except Exception as e:
                         pass
                         #print(e)
+                    try:
+                        self.hks_enabled = info['hks enabled']
+                    except Exception as e:
+                        pass
 
                     try:
                         self.joycfg = info['joycfg']
@@ -101,7 +107,7 @@ class Session_Thread(multiprocessing.Process):
                         #print"new custom delays: ", self.custom_delays)
                         self.fps = int(self.custom_delays['fps'])
                         self.act_int_t = float(self.custom_delays['ADI'])
-                        print("action interval: {}; custom delays: {}".format(self.act_int_t, self.custom_delays))
+                        # print("action interval: {}; custom delays: {}".format(self.act_int_t, self.custom_delays))
                     except Exception as e:
                         #print("custom delay error: ", e)
                         pass
@@ -122,6 +128,17 @@ class Session_Thread(multiprocessing.Process):
                             self.check_for_vbus()
                             # turn on controller
                             self.joy.TurnOn()
+                            if len(self.hotkeys) > 0:
+                                for k in self.hotkeys:
+                                    try:
+                                        keyboard.remove_hotkey(k)
+                                    except:
+                                        pass
+                            # empty containers
+                            self.strings = []
+                            self.hotkeys = []
+                            self.hk_names = []
+                            # unbind hotkeys if any exist, bc we are rebinding all of them.
 
                             for k,v in self.cfg.items():
                                 hk = v['Hotkey']
@@ -131,27 +148,27 @@ class Session_Thread(multiprocessing.Process):
                                     string = v['String']
                                 notation = v['Notation']
 
-                                if hk not in ["None", "'None'"] and string not in ["None", "'None'"] and hk != None and string != None and hk not in self.hk_names:
+                                if hk not in ["None", "'None'"] and string not in ["None", "'None'"] and hk != None and string != None:
                                     try:
                                         key = keyboard.add_hotkey(str(hk), self.perform_hk, args=(notation,string))
-                                        #print"appending {} to list".format(hk))
+                                        # print("appending {} to list".format(hk))
                                         self.hk_names.append(hk)
                                         self.hotkeys.append(key)
                                     except:
                                         pass
 
-                            if 'play hotkey' not in self.hk_names:
-                                print("play hotkey added")
-                                v = self.settings['play hotkey']
-                                key = keyboard.add_hotkey(str(v), self.toggle_play)
-                                self.hk_names.append('play hotkey')
-                                self.hotkeys.append(key)
 
-                            if 'switch sides hotkey' not in self.hk_names:
-                                v = self.settings['switch sides hotkey']
-                                key = keyboard.add_hotkey(str(v), self.switch_sides)
-                                self.hk_names.append('switch sides hotkey')
-                                self.hotkeys.append(key)
+                            v = self.settings['play hotkey']
+                            key = keyboard.add_hotkey(str(v), self.toggle_play)
+                            self.hk_names.append('play hotkey')
+                            self.hotkeys.append(key)
+
+                            v = self.settings['switch sides hotkey']
+                            key = keyboard.add_hotkey(str(v), self.switch_sides)
+                            self.hk_names.append('switch sides hotkey')
+                            self.hotkeys.append(key)
+
+
 
                             # if 'increase tuner hotkey' not in self.hk_names:
                             #     v = self.settings['increase tuner hotkey']
@@ -214,10 +231,10 @@ class Session_Thread(multiprocessing.Process):
                             self.strings = []
                             self.hotkeys = []
                             self.hk_names = []
-                            self.pending = []
+
                     except Exception as e:
-                        print("HKS: ", e)
-                        #pass
+                        # print("HKS: ", e)
+                        pass
 
 
             except Exception as e:
@@ -252,8 +269,8 @@ class Session_Thread(multiprocessing.Process):
                     try:
                         self.joy.action_interval(self.act_int_t, ignore=self.iai)
                     except Exception as e:
-                        print("ACTION INTERVAL ERROR: ", e)
-                        #pass
+                        # print("ACTION INTERVAL ERROR: ", e)
+                        pass
 
             self.iai = False
 
@@ -268,12 +285,13 @@ class Session_Thread(multiprocessing.Process):
 
 
     def perform_hk(self, notation, string):
-        info = {'user input': (notation, string)}
-        self.update_queue(info)
-        # give main process time to pause the sequence
-        if self.playing == True:
-            time.sleep(0.3)
-        self.parse_action(string, hk=True)
+        if self.hks_enabled == True:
+            info = {'user input': (notation, string)}
+            self.update_queue(info)
+            # give main process time to pause the sequence
+            if self.playing == True:
+                time.sleep(0.3)
+            self.parse_action(string, hk=True)
 
     def parse_action(self, string, hk=False):
 
@@ -295,31 +313,48 @@ class Session_Thread(multiprocessing.Process):
                 if iterstring in list(self.custom_delays):
                     f = self.custom_delays[iterstring]
                     t = float(f)
-                    print("iterstring: {}, t: {}".format(iterstring, t))
+                    # print("iterstring: {}, t: {}".format(iterstring, t))
                     #print"f = {}; delay for: {}".format(f,t))
                     self.joy.delay_for(t)
                     return
 
                 try:
+
                     for iter, a in enumerate(iterstring):
-                        #print"a: ", a)
+                        combine = False
+                        # print("a: ", a)
+                        # begin = time.time()
                         self.processIncoming()
+                        # tot = time.time() - begin
+                        # print("processincomingtime: ", tot)
                         # print("(AUTO) a: {}".format(a))
-                        if a in list(self.settings) and a != 'j_f' and 'delay' not in a:
+                        if a in list(self.settings) and a != 'j_f' and 'delay' not in a and 'combine' not in a:
                             # print("{} settings: {}".format(a, self.settings[a]))
                             cfg = self.settings[a]
                         elif a == 'j_f':
                             cfg = self.fps
-                            print("fps: ", cfg)
+                            # print("fps: ", cfg)
                         elif 'delay' in a:
                             a, t = a.split("(")
                             cfg = float("".join(list(t)[0:-1]))
-                            print("delay: {}, t: {}".format(a, cfg))
+                            # print("delay: {}, t: {}".format(a, cfg))
+                        elif 'combine' in a:
+                            a, cfg = a.split("(")
+                            cfg = "".join(list(cfg)[0:-1])
+                            acts = cfg.split(",")
+                            bin = []
+                            for i in acts:
+                                i = i.replace(" ", "")
+                                c = (i, flipx)
+                                bin.append(c)
+                            combine = True
                         else:
                             cfg = None
 
-                        if self.rest == False:
+                        if self.rest == False and combine == False:
                             getattr(self.joy, str(a))(cfg, flipx=flipx)
+                        elif self.rest == False and combine == True:
+                            self.joy.combine(bin)
 
 
                         info = {'action': a}
@@ -328,31 +363,46 @@ class Session_Thread(multiprocessing.Process):
                     if a == 'i_a_i':
                         self.iai = True
                 except Exception as e:
-                    #print("ITERSTRING ERROR: ", e)
+                    # print("ITERSTRING ERROR: ", e)
                     pass
 
             else:
+
                 iterstring = string
                 # print("(HK) iterstring: ", iterstring)
                 for a in iterstring:
+                    combine = False
                     # load configs from settings to pass as arg
                     # print("(HK) a: ", a)
-                    if a in list(self.settings) and a != 'j_f' and 'delay' not in a:
+                    if a in list(self.settings) and a != 'j_f' and 'delay' not in a and 'combine' not in a:
                         # print("{} settings: {}".format(a, self.settings[a]))
                         cfg = self.settings[a]
                     elif a == 'j_f':
                         cfg = self.fps
-                        print("fps: ", cfg)
+                        # print("fps: ", cfg)
                     elif 'delay' in a:
                         a, t = a.split("(")
                         cfg = float("".join(list(t)[0:-1]))
-                        print("delay: {}, t: {}".format(a, cfg))
+                        # print("delay: {}, t: {}".format(a, cfg))
+                    elif 'combine' in a:
+                        a, cfg = a.split("(")
+                        cfg = "".join(list(cfg)[0:-1])
+                        acts = cfg.split(",")
+                        bin = []
+                        for i in acts:
+                            i = i.replace(" ", "")
+                            c = (i, flipx)
+                            bin.append(c)
+                        combine = True
                     else:
                         cfg = None
                     # execute the action
-                    getattr(self.joy, str(a))(cfg)
-
+                    if combine == False:
+                        getattr(self.joy, str(a))(cfg, flipx=flipx)
+                    else:
+                        self.joy.combine(bin)
                     # inform main process
+
                     info = {'hk action': a}
                     self.update_queue(info)
 
@@ -393,33 +443,38 @@ class Session_Thread(multiprocessing.Process):
 
     def toggle_play(self):
         # play/pause
-        if self.playing == True and self.client_informed == True:
-            self.client_informed = False
-            self.joy.neutral('bla')
-            self.rest = True
-            #print"toggle_play: self.playing = false")
-            info = {'playing': False}
-            self.update_queue(info)
+        if self.hks_enabled == True:
+            if self.playing == True and self.client_informed == True:
+                self.client_informed = False
+                self.joy.neutral('bla')
+                self.rest = True
+                #print"toggle_play: self.playing = false")
+                info = {'playing': False}
+                self.update_queue(info)
 
-        elif self.playing == False and self.client_informed == True:
-            self.client_informed = False
-            self.rest = False
-            self.joy.neutral('bla')
-            #print"toggle_play: self.playing = true")
-            info = {'playing': True}
-            self.update_queue(info)
+            elif self.playing == False and self.client_informed == True:
+                self.client_informed = False
+                self.rest = False
+                self.joy.neutral('bla')
+                #print"toggle_play: self.playing = true")
+                info = {'playing': True}
+                self.update_queue(info)
+
+
+
 
 
 
     def switch_sides(self):
         #Left/right
-        if self.facing == 'R':
-            self.facing = 'L'
-        else:
-            self.facing = 'R'
+        if self.hks_enabled == True:
+            if self.facing == 'R':
+                self.facing = 'L'
+            else:
+                self.facing = 'R'
 
-        info = {'facing': self.facing}
-        self.update_queue(info)
+            info = {'facing': self.facing}
+            self.update_queue(info)
     #
     # def increase_tuner(self):
     #     #print"increase tuner")

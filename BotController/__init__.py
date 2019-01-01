@@ -3,6 +3,7 @@ import os
 from ctypes import *
 import time
 
+
 dll_path = os.path.dirname(__file__) + os.sep + "vXboxInterface.dll"
 
 try:
@@ -10,10 +11,19 @@ try:
 except OSError:
     sys.exit("Unable to load controller SDK DLL. Ensure that {} is present".format("vXboxInterface.dll"))
 
+
+
 class VXBOX_Device(object):
     def __init__(self, rID=None):
         self.id = rID
         self.is_on = False
+
+
+    def combine(self, acts): #acts = [(attr ,flipx), (attr2, flipx), ...]
+        # print("combined acts: ", acts)
+        for a in acts:
+            attr, fx = a
+            getattr(self, str(attr))('bla', flipx=fx)
 
     def a_d(self, cfg, flipx=None):
         result = vj.SetBtnA(self.id, True)
@@ -183,7 +193,7 @@ class VXBOX_Device(object):
 
     def dpl_d(self, cfg, flipx=None):
         if flipx == True:
-            vj.SetDpadRight(self.id)
+            result = vj.SetDpadRight(self.id)
         else:
             result = vj.SetDpadLeft(self.id)
         if result == False:
@@ -348,6 +358,10 @@ class VXBOX_Device(object):
 
         return True
 
+    def delay(self, t, flipx=None):
+        begin = time.time()
+        time.sleep(t)
+        end = time.time()
 
 
     def delay_for(self, t):
@@ -385,7 +399,8 @@ class VXBOX_Device(object):
         begin = time.time()
         time.sleep(t)
         end = time.time()
-        # print("action interval runtime: ", end - begin)
+        runtime = end - begin
+        # print("action interval runtime: ", runtime)
 
     # i, i2p, act, cfg, flipx, t, fps
     # listener = input.Session_Thread(args=(q1, q2, root.port))
@@ -404,17 +419,19 @@ class VXBOX_Device(object):
 
     def TurnOff(self):
         try:
-            self.is_on = False
-            vj.UnPlug(self.id)
-            return True
+            if self.is_on == True:
+                self.is_on = False
+                vj.UnPlug(self.id)
+                return True
         except:
             return False
 
     def TurnOn(self):
         try:
-            vj.PlugIn(self.id)
-            self.is_on = True
-            return True
+            if self.is_on == False:
+                vj.PlugIn(self.id)
+                self.is_on = True
+                return True
         except:
             # print("controller already on or taken")
             return False

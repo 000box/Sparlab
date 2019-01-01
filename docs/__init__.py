@@ -47,17 +47,17 @@ class PopupDoc(tk.Toplevel):
 
         # textbox for main keys
         mainhkbox = tk.Text(self, width=8, height=5, state='normal')
-        mainhkbox.pack(anchor='nw', side='top', padx=5, pady=5, fill='x')
+        mainhkbox.pack(anchor='nw', side='top', padx=5, pady=10, fill='both', expand=1)
         mainhkbox.insert("1.0", str(settings))
         mainhkbox.config(state='disabled')
 
         joyhkbox = tk.Text(self, width=8, height=5, state='normal')
-        joyhkbox.pack(anchor='ne', side='top', padx=5, pady=5, fill='x')
+        joyhkbox.pack(anchor='ne', side='top', padx=5, pady=10, fill='both', expand=1)
         joyhkbox.insert("1.0", str(joyfunc))
         joyhkbox.config(state='disabled')
 
         gamehkbox = tk.Text(self, width=16, height=5, state='normal')
-        gamehkbox.pack(anchor='s', side='top', padx=5, pady=5, fill='x')
+        gamehkbox.pack(anchor='s', side='top', padx=5, pady=10, fill='both', expand=1)
         gamehkbox.insert("1.0", str(gamefunc))
         gamehkbox.config(state='disabled')
 

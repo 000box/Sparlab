@@ -32,42 +32,28 @@ ICON = os.path.join(r'.\config', "sparlab_logo.ico")
 
 class App(tk.Tk):
 
-    def point_to_files(self, edic):
-        """
-        Re-points to files user wants to use, on user's commit in File Pointer config panel
-        edic is an evaluated dictionary from the panel's textbox
-        """
-        with open(DPFILES, "w") as f:
-            f.write(str(edic))
-
-
-        self.gamefile = DATAPATH + "\\" + edic["game file"]
-        self.joyfile = DATAPATH + "\\" + edic["joy file"]
-        self.settingsfile = DATAPATH + "\\" + edic["settings file"]
+    def point_to_files(self, play=False):
+        """ After user presses play or Refresh, this function will be called"""
+        with open(DPFILES, "r") as f:
+            files = eval(f.read())
+            f.close()
+        self.gamefile = DATAPATH + "\\" + files["game file"]
+        self.joyfile = DATAPATH + "\\" + files["joy file"]
+        self.settingsfile = DATAPATH + "\\" + files["settings file"]
 
         # game functions
-        filename = "game.txt"
-        path = DATAPATH
-        cfg = os.path.join(path, filename)
-        print("path: {}, filename: {}".format(path, filename))
-        with open(cfg, 'r') as f:
+        with open(self.gamefile, 'r') as f:
             self.cfg = eval(f.read())
             f.close()
 
         # joy functions
-        filename = "joy.txt"
-        path = DATAPATH
-        joycfg = os.path.join(path, filename)
-        with open(joycfg, "r") as f:
+        with open(self.joyfile, "r") as f:
             # string to python dict
             self.joy_cfg = eval(f.read())
             f.close()
 
         # settings
-        filename = "settings.txt"
-        path = DATAPATH
-        settings = os.path.join(path, filename)
-        with open(settings, "r") as f:
+        with open(self.settingsfile, "r") as f:
             # string to python dict
             self.settings = eval(f.read())
             f.close()
@@ -79,13 +65,36 @@ class App(tk.Tk):
         self.port = int(self.settings["joy port"])
         self.default_dir = self.settings['default direction']
 
+        for tuner in eval(self.settings["Delay Tuners"]):
+            if tuner not in list(self.delay_tuners):
+                self.delay_tuners[tuner] = tk.StringVar(value=0.0)
+                l = tk.Label(self.fixbtnframe, text=tuner, width=2, font='Verdana 10')
+                l.pack(side='left', anchor='n', padx=10)
+
+                # self.togglelabs.append(l)
+                tk.Spinbox(self.fixbtnframe, to=100.00, from_=0.00, textvariable=self.delay_tuners[tuner], increment=0.001, width=5, command=lambda: self.tune_var()).pack(side='left', anchor='n')
+
+        for w in self.fixbtnframe.winfo_children():
+            try:
+                if w.text in list(self.delay_tuners) and w.text not in eval(self.settings["Delay Tuners"]):
+                    # print("destroying: ", w)
+                    w.destroy()
+            except Exception as e:
+                #print("Error deleting a delay tuner from self.fixbtnframe: ", e)
+                pass
+
+        if play == False:
+            dt = {k:float(v.get()) for k,v in self.delay_tuners.items()}
+            info = {'settings': self.settings, 'joycfg': self.joy_cfg, 'cfg': self.cfg, 'hks on': True, 'facing': self.dir, 'delay tuners': dt, 'hks enabled': self.hotkeys_enabled}
+            self.q1.put(info)
+
 
     def __init__(self, q1, q2):
         tk.Tk.__init__(self)
         tk.Tk.wm_title(self, "Sparlab")
         tk.Tk.iconbitmap(self, default=ICON)
 
-        self.geometry('{}x{}'.format(500, 200))
+        self.geometry('{}x{}'.format(600, 150))
         self.configure(background="#ffffff")
 
         self.q1 = q1
@@ -111,9 +120,9 @@ class App(tk.Tk):
             self.files = files
             for iter, p in enumerate([[self.files['game file'], "gamefile", GAME], [self.files['joy file'], "joyfile", JOY], [self.files['settings file'], "settingsfile", SETTINGS]]):
                 path, filename = os.path.split(p[0])
-                print("path: {}; filename: {}".format(path, filename))
+                # print("path: {}; filename: {}".format(path, filename))
                 fp = r"{}\{}".format(DATAPATH, path)
-                print("fp: ", fp)
+                # print("fp: ", fp)
                 entire = fp + "\\" + filename
 
                 # if the path to the text file does not exist, only check on first iteration
@@ -138,50 +147,39 @@ class App(tk.Tk):
         else:
             try:
                 with open(DPFILES, "r") as f:
-                    print("this should work!")
+                    # print("this should work!")
                     self.files = eval(f.read())
-                    self.gamefile = self.files["game file"]
-                    self.joyfile = self.files["joy file"]
-                    self.settingsfile = self.files["settings file"]
+                    self.gamefile = DATAPATH + "\\" + self.files["game file"]
+                    self.joyfile = DATAPATH + "\\" + self.files["joy file"]
+                    self.settingsfile = DATAPATH + "\\" + self.files["settings file"]
             except Exception as e:
-                print(e)
+                # print(e)
                 with open(DPFILES, "w") as f:
                     f.write(str(self.files))
                     f.close()
                 with open(DPFILES, "r") as f:
                     content = f.read()
                     self.files = eval(f.read())
-                    self.gamefile = self.files["game file"]
-                    self.joyfile = self.files["joy file"]
-                    self.settingsfile = self.files["settings file"]
+                    self.gamefile = DATAPATH + "\\" + self.files["game file"]
+                    self.joyfile = DATAPATH + "\\" + self.files["joy file"]
+                    self.settingsfile = DATAPATH + "\\" + self.files["settings file"]
 
 
 
         # game functions
-
-        path = DATAPATH
-        filename = "game.txt"
-        cfg = os.path.join(path, filename)
-        print("path: {}, filename: {}".format(path, filename))
-        with open(cfg, 'r') as f:
+        with open(self.gamefile, 'r') as f:
             self.cfg = eval(f.read())
             f.close()
 
         # joy functions
 
-        path = DATAPATH
-        filename = "joy.txt"
-        joycfg = os.path.join(path, filename)
-        with open(joycfg, "r") as f:
+        with open(self.joyfile, "r") as f:
             # string to python dict
             self.joy_cfg = eval(f.read())
             f.close()
 
         # settings
-        filename = "settings.txt"
-        path = DATAPATH
-        settings = os.path.join(path, filename)
-        with open(settings, "r") as f:
+        with open(self.settingsfile, "r") as f:
             # string to python dict
             self.settings = eval(f.read())
             f.close()
@@ -203,7 +201,7 @@ class App(tk.Tk):
         except:
             self.gametitle = "Game"
         self.joy_is_on = False
-
+        self.hotkeys_enabled = False
         try:
             self.delay_tuners = {i:tk.StringVar(value=0.0) for i in eval(self.settings['Delay Tuners'])}
         except:
@@ -333,10 +331,11 @@ class App(tk.Tk):
         editmenu = tk.Menu(self, tearoff=False)
         helpmenu = tk.Menu(self, tearoff=False)
 
-        self.submenus = {'File': (filemenu, [('New', self.new_file,None ), ('Open', self.open_file, None),
+        self.submenus = {'File': (filemenu, [('New', self.new_file,None ), ('Open', self.open_file, None), ('Refresh', self.point_to_files, None),
                         ('Play', self.play, None), ('Toggle Joy State', self.toggle_controller, None), ('Flip X Axis ', self.toggle_direction, None),
+                        ('Toggle Hotkeys', self.toggle_hotkeys, None),
                         ('Save', self.save_as, None),
-                        ('Exit', self.destroy, None)]), 'Edit': (editmenu, [('Edit', self.panel, "File Pointer")]),
+                        ('Exit', self.destroy, None)]),
 
                         'Help': (helpmenu, [('Documentation', self.view_documentation, None),
                          ('FAQ', self.view_faq, None), ("HK Sheet", self.panel, "HK Sheet"),
@@ -377,19 +376,19 @@ class App(tk.Tk):
         #tab_id = self.note.tabs()
         actbtns = []
         imgs = []
-        fixbtnframe = tk.Frame(tab)
-        fixbtnframe.pack(side='bottom', anchor='s', fill='x')
+        self.fixbtnframe = tk.Frame(tab)
+        self.fixbtnframe.pack(side='bottom', anchor='s', fill='x')
         btnframe = tk.Frame(tab)
         btnframe.pack(side='top', anchor='n', fill='x')
 
 
         # "Settings", "Joy Functions", "Game Functions",
-        self.panelbtn = ttk.Combobox(btnframe, width=30, values=["Flip X Axis", "Toggle Joy State", "File Pointer", "HK Sheet", "Documentation", "FAQ"], state='readonly')
+        self.panelbtn = ttk.Combobox(btnframe, width=30, values=["Flip X Axis", "Toggle Joy State", "Toggle Hotkeys", "Refresh", "HK Sheet", "Documentation", "FAQ"], state='readonly')
 
         self.panelbtn.bind("<<ComboboxSelected>>", lambda e: self.cboxcallback(e))
         self.panelbtn.pack(side='right', anchor='ne')
 
-        self.initButton = btn = ttk.Button(fixbtnframe, text = "Play", width=8, command=lambda: self.play(), state='normal' if self.joy_is_on else 'disabled')
+        self.initButton = btn = ttk.Button(self.fixbtnframe, text = "Play", width=8, command=lambda: self.play(), state='normal' if self.joy_is_on else 'disabled')
         self.initButton.pack(side='right', anchor='e')
 
         stat = "Joy State:  On" if self.joy_is_on else "Joy State: Off"
@@ -404,12 +403,18 @@ class App(tk.Tk):
         # self.toggledirbtn.pack(side='right', anchor="ne")
         self.dirstatuslab.pack(side='left', anchor="ne", padx=15)
 
+        stat = 'Hotkeys: On' if self.hotkeys_enabled == True else 'Hotkeys: Off'
+        self.hkstatuslab = tk.Label(btnframe, text=stat)
+        # self.toggledirbtn = ttk.Button(btnframe, text="Flip X Axis ", command=lambda lab=self.dirstatuslab: self.toggle_direction())
+        # self.toggledirbtn.pack(side='right', anchor="ne")
+        self.hkstatuslab.pack(side='left', anchor="ne", padx=15)
+
         # adjusting fps on main screen
 
 
         self.fpsvar = tk.StringVar(value=str(self.fps))
-        self.fpstuner = tk.Spinbox(fixbtnframe, to=1000, from_=0, textvariable=self.fpsvar, width=4, command=lambda: self.tune_var())
-        l = tk.Label(fixbtnframe, text='fps', width=5, font='Verdana 10') #ff4242'
+        self.fpstuner = tk.Spinbox(self.fixbtnframe, to=1000, from_=0, textvariable=self.fpsvar, width=6, command=lambda: self.tune_var())
+        l = tk.Label(self.fixbtnframe, text='fps', width=5, font='Verdana 10') #ff4242'
         l.pack(side='left', anchor='nw')
 
         # self.togglelabs.append(l)
@@ -417,8 +422,8 @@ class App(tk.Tk):
         self.fpstuner.pack(side='left', anchor='nw')
         # adjusting action interval time on main screen
         self.aivar = tk.StringVar(value=str(self.action_interval_t))
-        self.aituner = tk.Spinbox(fixbtnframe, to=100.00, from_=0.00, textvariable=self.aivar, increment=0.01, width=5, command=lambda: self.tune_var())
-        l = tk.Label(fixbtnframe, text='ADI', width=4, font='Verdana 10')
+        self.aituner = tk.Spinbox(self.fixbtnframe, to=100.00, from_=0.00, textvariable=self.aivar, increment=0.001, width=6, command=lambda: self.tune_var())
+        l = tk.Label(self.fixbtnframe, text='ADI', width=4, font='Verdana 10')
         l.pack(side='left', anchor='nw', padx=5)
 
         self.delay_tuners['ADI'] = self.aivar
@@ -436,11 +441,11 @@ class App(tk.Tk):
 
         for notation, var in self.delay_tuners.items():
             if notation not in ['fps', 'ADI']:
-                l = tk.Label(fixbtnframe, text=notation, width=2, font='Verdana 10')
+                l = tk.Label(self.fixbtnframe, text=notation, width=2, font='Verdana 10')
                 l.pack(side='left', anchor='n', padx=10)
 
                 # self.togglelabs.append(l)
-                tk.Spinbox(fixbtnframe, to=100.00, from_=0.00, textvariable=var, increment=0.01, width=5, command=lambda: self.tune_var()).pack(side='left', anchor='n')
+                tk.Spinbox(self.fixbtnframe, to=100.00, from_=0.00, textvariable=var, increment=0.001, width=6, command=lambda: self.tune_var()).pack(side='left', anchor='n')
 
 
 
@@ -508,13 +513,16 @@ class App(tk.Tk):
         selection = event.widget.get()
         if selection == "Toggle Joy State":
             self.toggle_controller()
+        elif selection == "Toggle Hotkeys":
+            self.toggle_hotkeys()
         elif selection == "Flip X Axis":
             self.toggle_direction()
-
         elif selection == "Documentation":
             self.view_documentation()
         elif selection == "FAQ":
             self.view_faq()
+        elif selection == "Refresh":
+            self.point_to_files()
         else:
             self.panel(selection)
 
@@ -628,6 +636,19 @@ class App(tk.Tk):
         self.dirstatuslab.config(text=stat)
 
 
+    def toggle_hotkeys(self):
+        if self.hotkeys_enabled == True:
+            stat = 'Hotkeys: Off'
+            self.hotkeys_enabled = False
+        else:
+            stat = 'Hotkeys: On'
+            self.hotkeys_enabled = True
+        info = {'hks enabled': self.hotkeys_enabled}
+        self.q1.put(info)
+
+        self.hkstatuslab.config(text=stat)
+
+
     # def view_settings(self, type):
     #     #print("type: ", type)
     #     self.panel(type)
@@ -691,13 +712,13 @@ class App(tk.Tk):
                     break
 
             dt = {k:float(v.get()) for k,v in self.delay_tuners.items()}
-            #print'dt: ', dt)
-            #print"ACTLIST: ", actlist)
+            # print('dt: ', dt)
+            # print("ACTLIST: ", actlist)
 
 
 
 
-            info = {'playing': True, 'hks on': True, 'settings': self.settings, 'actlist': actlist,'cfg': self.cfg, 'facing': self.dir, 'delay tuners': dt}
+            info = {'playing': True, 'settings': self.settings, 'actlist': actlist,'cfg': self.cfg, 'facing': self.dir, 'delay tuners': dt, 'hks enabled': self.hotkeys_enabled}
 
             self.q1.put(info)
 
@@ -711,14 +732,14 @@ class App(tk.Tk):
         """Temp replacement for Settings, this function will be ran every time user
             presses play or presses 'load settings + functions'"""
 
-        self.point_to_files(self.files)
+        self.point_to_files(play=True)
 
 
 
     def panel(self, stype):
         pd_map = {
                     'HK Sheet': 'view_hotkeys',
-                    'File Pointer': 'edit_dict',
+                    'Refresh': 'edit_dict',
                     }
 
         togmap = {'Flip X Axis': 'toggle_direction', 'Toggle Joy State': 'toggle_controller'}
@@ -741,7 +762,7 @@ class App(tk.Tk):
 
 
         info = {'joytype': self.joytype, 'gametitle': self.gametitle}
-        dicts = {'Settings': self.settings, 'Joy Functions': self.joy_cfg, 'Game Functions': self.cfg, "File Pointer": self.files}
+        dicts = {'Settings': self.settings, 'Joy Functions': self.joy_cfg, 'Game Functions': self.cfg, "Refresh": self.files}
 
         if stype == 'HK Sheet':
             hksheet = PopupDoc(self, stype)
