@@ -1,0 +1,259 @@
+﻿
+
+The tools that fighting gamers use to train rely on source code in order to operate.
+Because of this, fighters are limited to the built-in tools provided by the Game Developers
+for that game.
+
+Problem:
+
+Gamers have to re-setup every single time you train. This is a slow and tedious process that makes training a lot more difficult.
+It is difficult for gamers to understand what they are doing right and wrong when learning how to execute combos.
+This often results in endless searches for frame data on
+Google and example videos on YouTube. Which later results in having to download 3rd party injection tools to read frame data. This does provide the solution of recording your controller,
+but what about for inputting the perfectly placed combo? Even if you set the combo, how do you keep everything else on point? How do you make it even more perfect? Keeping all of these
+boxes takes time that fighters will never get back. Now what if the source code changes? Now you have to find new character or asset codes that could take hours or DAYS to find.
+
+
+Solution:
+
+Sparlab. A tool that allows fighting gamers to record their controller, simulate input + delay time, AND use for more than one .
+
+Applications:
+
+Optimize new/existing combos to gain significant timing advantages.
+-Find WHAT WORKS by simulating combos and tuning them to perfection.
+-Compare WHAT WORKS with the output results of your PJoy to measure your performance WHILE you train.
+
+Less Hassle, more time to train.
+-Save your combos, load them for later use.
+-Load similar or identical combos for other fighting games.
+
+
+Features:
+
+Virtual Joystick (VJoy):
+-installable driver to your PC.
+-Steam compatible.
+
+Physical Joystick (PJoy):
+-The device you use to train.
+-You can use an Arcade Stick, XBOX Controller, or Keyboard.
+
+Action Editor:
+-Home for all of your Actions.
+-Each action can have a notation, hotkey, and string.
+
+In Feed:
+-converts notation scripts to its matching string of functions when you press Play.
+
+Out Feed: record and log your outputs.
+-Output from both devices is displayed in real-time.
+-You can also save the output to a log file.
+
+
+Installation:
+
+Press the Green Download button at the top of the webpage.
+Once it is downloaded, refer to the documentation.txt file in the source code.
+
+
+
+1) Go inside driver folder and look for 5 files: 'devcon', 'scpvbus', 'ScpVBus', 'ScpVBus.sys', and 'WdfCoinstaller01009.dll'.
+	Once you see this, right-click the name of the folder in the folder title bar above the files. Select 'Copy address'
+
+2) In your Windows Search Bar at the bottom of your screen, type in 'cmd' and right click on 'Command Prompt', select 'Run as Administrator', press 'Yes'
+
+3) In the command prompt window, type in 'cd' (not including the quotations), press SPACEBAR, paste the address text, then press ENTER. (example: cd C:\Users\John Ward\Desktop\Sparlab\driver)
+
+4) To install a driver: type 'devcon.exe install ScpVBus.inf Root\ScpVBus' and press ENTER
+	- Your command prompt should output something like this: 'Device node created. Install is complete when drivers are installed...' and 'Drivers installed successfully.'
+   To uninstall: type 'devcon.exe remove Root\ScpVBus' and press ENTER.
+	- Your command prompt should say something along the lines of '1 device(s) were removed.'
+
+
+'Virtual Joystick Configuration:
+
+
+1) Launch the Sparlab app, then go to > Steam Client > Big Picture Mode > Settings > Controller Settings
+
+2) When you toggle your joy state, something like 'Xbox 360 Controller_1' should show up. Make sure 'Xbox Configuration Support' is checked for that controller
+
+3) In your game controller settings, you can map your bindings by giving each 'button' a hotkey in your Action Editor.
+,
+
+'Physical Joystick Configuration:
+
+
+Your keyboard is the default PJoy Device when you launch Sparlab for the first time.
+
+If you want to switch to an XBOX joystick, follow these steps:
+
+1) Make sure your XBOX device is plugged into a USB port on your PC, then verify that its listing in your Device Report. ('Tools/Device Report' in your top command bar)
+2) In Settings (inside 'Edit' menu), change 'physical joy type' to 'xbox', press 'Commit', then restart the app.
+3) After committing any changes, try using your joystick and check the 'Out' feed for output.
+4) You can go into Settings and scroll down to 'Button-Function Map' to realign buttons. (See 'Button-Function Map' below for more details)
+
+If you want to switch to an Arcade Stick, follow these steps:
+
+1) Make sure your Arcade Stick is plugged into a USB port on your PC, then verify its listing in your Device Report.
+2) If it is listed, scroll down to see the 'Input Caps', make sure it has the usages 'Hat switch' and 'Button'. If so, keep the Report open and go to Settings, scroll down to 'arcade stick'
+    under 'Button-Function Map' and change the values of 'vendor id', 'hat switch' and 'buttons' to the corresponding values listed in your report, you can change the values of the
+3) In Settings, change 'physical joy type' to 'arcade stick', press 'Commit', then restart the app.
+4) After reopening the app, test the buttons on your device and look for output in your 'Out' feed. The 'View Raw Output' button will tell you the value of
+    each button and whether it is pressed or released, you can use this information to re-align any buttons inside of 'hat switch' and/or 'buttons'.
+
+If you wish to not use any PJoy device, you can set it to 'None'.
+
+,
+
+'Settings:
+
+
+Below are descriptions for each settings:
+
+'Action Files: These APPDATA files are where your actions are imported from.
+'fps: Manipulates the time length used by the 'j_f' function
+'Fixed Delay: Delay between every action inside your script
+'Start Delay: Delay before the 1st action in your script plays,
+'default direction: Can be 'R' or 'L'.
+'play hotkey: Toggles b/w Play and Pause
+'flip x axis hotkey: When flipped, any analog value with a non-zero x value is flipped.
+'virtual joy port: The 'port' where your virtual joystick plugs into. Can be 1,2,3 or 4.
+'physical joy type: Can be 'arcade stick', 'xbox', 'keyboard', or 'None'.
+'outfeed max characters:  Your outfeed box clears after surpassing this number.
+'Delay Variables: These are for inserting into your script/action strings to simulate delay.
+'virtual joy text color: The color of this joy\'s outfeed text.
+'physical joy text color: The color of this joy\'s outfeed text.
+'log type: Can be 'normal' (logs pj activity) or 'comparison' (logs pj activity alongside your script\'s string value).
+'default neutral allowance: When your pjoy is inactive for this amt. of time while you are in the middle of a string, the outfeed will end the string and start a new one.
+'virtual joy type: This setting must be equal to 'xbox' for now.
+
+'analog configs: 'x fix' & 'y fix' are the configs used by your vjoy. 'x min','x max','y min', & 'y max' are used by your pjoy in order to categorize its analog states.
+'Button-Function Map: Mapping of buttons to ('press function', 'release function'). Arcade Stick Only: Must have valid vendor ID. All buttons have a valid page ID, each button must have a valid usage ID. \
+Hat switch must have one valid usage id. You can find this information by viewing your Device Report (In tools) ,
+
+'Action Editor:
+
+
+This is where the app pulls from when you use hotkeys or play notation scripts. Each tab in the editor represents a file you have listed in your 'Action Files' in Settings.
+
+Each action has its own Name (e.g. 'double dash'), Notation (e.g. 'dd'), Hotkey (e.g. 'd+-'), and string (e.g. ['la_r', 'delay(0.015)', 'la_n', 'delay(0.015)', 'la_r', 'delay(0.015)', 'la_n'])
+
+Examples of correctly formatted actions:
+
+'right punch:			{'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.020)', 'y_u']},
+'start:			{'Notation': 'None', 'Hotkey': '`', 'String': ['start_d', 'delay(0.020)', 'start_u']}
+
+See how 'right punch' has a 'None' hotkey and 'start' has 'None' notation? That's because there are actions that can be used as hotkeys ('start') and actions that are used mainly as script builders.
+
+
+Functions for building strings:
+
+la_ur : left analog up right
+la_r : left analog right
+la_dr : left analog down right
+la_d : left analog down
+la_dl : left analog down left
+la_l : left analog left
+la_ul : left analog up left
+la_u : left analog up
+la_n : left analog neutral
+
+ra_ur : right analog up right
+ra_r : right analog right
+ra_dr : right analog down right
+ra_d : right analog down
+ra_dl : right analog down left
+ra_l : right analog left
+ra_ul : right analog up left
+ra_u : right analog up
+ra_n : right analog neutral
+
+
+dpu_u : dpad up release
+dpu_d : dpad up press
+dpr_u : dpad right release
+dpr_d : dpad right press
+dpd_u : dpad down release
+dpd_d : dpad down press
+dpl_u : dpad left release
+dpl_d : dpad left press
+
+a_u : a button release
+a_d : a button press
+b_u : b button release
+b_d : b button press
+x_u : x button release
+x_d : x button press
+y_u : y button release
+y_d : y button press
+rb_u : rb button release
+rb_d : rb button press
+rt_u : rt button release
+rt_d : rt button press
+lb_u : lb button release
+lb_d : lb button press
+lt_u : lt button release
+lt_d : lt button press
+start_u : start button release
+start_d : start button press
+back_u : back button release
+back_d : back button press
+
+
+Other Functions:
+
+'j_f': Hold for one frame: Hold for FPS (['a_d','j_f','a_u'] with FPS of 60 is equivalent to ['a_d','delay(0.060)','a_u'])
+'delay(t)': Hold for t seconds ('delay(1.123)' means delay for 1.123 seconds)
+'combine(functions)': Combine actions ('combine(a_d,b_d)' means press A and B)
+'string(action)': The string of 'action'. This function allows you to perform strings inside of strings.
+
+
+Creating your Notation Script:
+
+
+Follow these guidelines for successful conversion of notations:
+-  Everything must be separated with a SPACE
+	Correct: [ d d/r r 3 ]
+	Incorrect: [dd/rr3]
+- The string of actions you want to execute when you press ‘Play’ must be contained in brackets on the first line of your textbox.
+-Correct: [ 1+2 ]
+-Incorrect: 1+2
+- All notations must be included in actions inside your Action Editor.
+
+
+In-app commands:
+
+
+Start Log: writes your outputs to a .csv file in your 'logs' folder (YOURNAME/APPDATA/Roaming/Sparlab/version#/logs).
+Clear: removes all text in your 'Out' feed.
+View Raw: converts existing and future string output in your 'Out' feed to its raw format.
+Start Delay: the delay time before your script starts running from the beginning.
+Fixed Delay: the delay time between every notation in your script.
+Delay Variables: these can be inserted into your script to simulate delay (in seconds).
+Enable HKs: turns on the hotkeys you have defined in your Action Editor.
+Flip X Axis: switches the directions of all functions that have an X Direction (e.g. 'dpr_d' --> 'dpl_d', 'la_dl' --> 'la_dr').
+Turn VJoy On: plugs in your VJoy Device.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

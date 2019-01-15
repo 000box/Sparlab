@@ -18,96 +18,96 @@ class VXBOX_Device(object):
         self.id = rID
         self.is_on = False
 
-
     def combine(self, acts): #acts = [(attr ,flipx), (attr2, flipx), ...]
         # print("combined acts: ", acts)
         for a in acts:
             attr, fx = a
             getattr(self, str(attr))('bla', flipx=fx)
+        return time.time()
 
     def a_d(self, cfg, flipx=None):
         result = vj.SetBtnA(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def a_u(self, cfg, flipx=None):
         result = vj.SetBtnA(self.id, False)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def b_d(self, cfg, flipx=None):
         result = vj.SetBtnB(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def b_u(self, cfg, flipx=None):
         result = vj.SetBtnB(self.id, False)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def x_d(self, cfg, flipx=None):
         result = vj.SetBtnX(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def x_u(self, cfg, flipx=None):
         result = vj.SetBtnX(self.id, False)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def y_d(self, cfg, flipx=None):
         result = vj.SetBtnY(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def y_u(self, cfg, flipx=None):
         result = vj.SetBtnY(self.id, False)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def rb_d(self, cfg, flipx=None):
         result = vj.SetBtnRB(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def rb_u(self, cfg, flipx=None):
         result = vj.SetBtnLB(self.id, False)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def lb_d(self, cfg, flipx=None):
         result = vj.SetBtnLB(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def lb_u(self, cfg, flipx=None):
         result = vj.SetBtnLB(self.id, False)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def start_d(self, cfg, flipx=None):
         state = True
@@ -115,7 +115,7 @@ class VXBOX_Device(object):
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def start_u(self, cfg, flipx=None):
         state = False
@@ -123,59 +123,63 @@ class VXBOX_Device(object):
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def back_d(self, cfg, flipx=None):
         result = vj.SetBtnBack(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def back_u(self, cfg, flipx=None):
         result = vj.SetBtnBack(self.id, False)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def rt_d(self, cfg, flipx=None):
         result = vj.SetTriggerR(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def rt_u(self, cfg, flipx=None):
         result = vj.SetTriggerR(self.id, False)
         if result == 0:
             return False
         else:
-            return True
+            return time.time()
 
     def lt_d(self, cfg, flipx=None):
         result = vj.SetTriggerL(self.id, True)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def lt_u(self, cfg, flipx=None):
         result = vj.SetTriggerL(self.id, False)
         if result == 0:
             return False
         else:
-            return True
+            return time.time()
 
     def dpu_d(self, cfg, flipx=None):
         result = vj.SetDpadUp(self.id)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def dpu_u(self, cfg, flipx=None):
-        return vj.SetDpadOff(self.id)
+        res = vj.SetDpadOff(self.id)
+        if res == True:
+            return time.time()
+        else:
+            return res
 
     def dpr_d(self, cfg, flipx=None):
         if flipx == True:
@@ -186,10 +190,14 @@ class VXBOX_Device(object):
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def dpr_u(self, cfg, flipx=None):
-        return vj.SetDpadOff(self.id)
+        res = vj.SetDpadOff(self.id)
+        if res == True:
+            return time.time()
+        else:
+            return res
 
     def dpl_d(self, cfg, flipx=None):
         if flipx == True:
@@ -199,21 +207,28 @@ class VXBOX_Device(object):
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def dpl_u(self, cfg, flipx=None):
-        return vj.SetDpadOff(self.id)
+        res = vj.SetDpadOff(self.id)
+        if res == True:
+            return time.time()
+        else:
+            return res
 
     def dpd_d(self, cfg, flipx=None):
         result = vj.SetDpadDown(self.id)
         if result == False:
             return False
         else:
-            return True
+            return time.time()
 
     def dpd_u(self, cfg, flipx=None):
-        return vj.SetDpadOff(self.id)
-
+        res = vj.SetDpadOff(self.id)
+        if res == True:
+            return time.time()
+        else:
+            return res
 
     def la_dr(self, cfg, flipx=None):
         if flipx == True:
@@ -254,7 +269,10 @@ class VXBOX_Device(object):
     def la_n(self, cfg, flipx=None):
         result = vj.SetAxisY(self.id, 0)
         result = vj.SetAxisX(self.id, 0)
-        return result
+        if result == True:
+            return time.time()
+        else:
+            return result
 
 
     def ra_dr(self, cfg, flipx=None):
@@ -301,74 +319,65 @@ class VXBOX_Device(object):
     def ra_n(self, cfg, flipx=None):
         result = vj.SetAxisRy(self.id, 0)
         result = vj.SetAxisRx(self.id, 0)
-        return result
+        if result == True:
+            return time.time()
+        else:
+            return result
 
     def j_f(self, fps, flipx=None):
-        beg = time.time()
-        #print("begin time: ", beg)
         s = int(fps) / 1000
         time.sleep(s)
-        end = time.time()
-        # print("j_f time: ", end - beg)
-        return
+        return time.time()
 
 
     def la(self, state, flipx=False):
-        if isinstance(state, tuple):
-            hexx, hexy = state[0], state[1]
-        elif isinstance(state, str):
-            hexx, hexy = eval(state)
-        else:
-            # print("la not a string or tuple: {}".format())
+        x, y = (int(state['x fix']), int(state['y fix']))
+
+
+        result = vj.SetAxisY(self.id, y)
+
+        if result == False:
+            print("bad result: hexy = {}".format(hexy))
             return False
 
-        result = vj.SetAxisY(self.id, hexy)
+        xval = x if flipx == False else -x
+        result = vj.SetAxisX(self.id, xval)
+
+        if result == False:
+            print("bad result: xval = {}".format(xval))
+            return False
+
+        return time.time()
+
+    def ra(self, state, flipx=False):
+        x, y = (int(state['x fix'] * 65536), int(state['y fix'] * 65536))
+
+        result = vj.SetAxisRy(self.id, hex(y))
 
         if result == False:
             # print("bad result: hexy = {}".format(hexy))
             return False
 
-        xval = hexx if flipx == False else -hexx
-        result = vj.SetAxisX(self.id, xval)
-
-        if result == False:
-            # print("bad result: xval = {}".format(xval))
-            return False
-
-        return True
-
-    def ra(self, state, flipx=False):
-        if isinstance(state, tuple):
-            hexx, hexy = state[0], state[1]
-        elif isinstance(state, str):
-            hexx, hexy = eval(state)
-        else:
-            return False
-
-        result = vj.SetAxisRy(self.id, hexy)
+        xval = x if flipx == False else -x
+        result = vj.SetAxisRx(self.id, hex(xval))
 
         if result == False:
             return False
 
-        xval = hexx if flipx == False else -hexx
-        result = vj.SetAxisRx(self.id, xval)
-
-        if result == False:
-            return False
-
-        return True
+        return time.time()
 
     def delay(self, t, flipx=None):
-        begin = time.time()
         time.sleep(t)
-        end = time.time()
+        return time.time()
 
 
     def delay_for(self, t):
         begin = time.time()
         time.sleep(t)
         end = time.time()
-        # print("delay_for runtime: ", end - begin)
+        print("delay_for runtime (t = {}): ".format(t), end - begin)
+        return time.time()
+        #
 
     def neutral(self, cfg, flipx=None):
         vj.SetBtnA(self.id,False)
@@ -386,6 +395,7 @@ class VXBOX_Device(object):
         vj.SetAxisY(self.id,0)
         vj.SetAxisRx(self.id,0)
         vj.SetAxisRy(self.id,0)
+        return time.time()
 
     def i_a_i(self, yes):
         pass
@@ -393,13 +403,11 @@ class VXBOX_Device(object):
 
     def action_interval(self, t, ignore=False):
         if ignore == True:
-            return
+            time.time()
         # by default
         # sleep between every action so there are spaces b/w inputs (configurable in settings.txt)
-        begin = time.time()
         time.sleep(t)
-        end = time.time()
-        runtime = end - begin
+        return time.time()
         # print("action interval runtime: ", runtime)
 
     # i, i2p, act, cfg, flipx, t, fps
