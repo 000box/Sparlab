@@ -474,6 +474,7 @@ class Action_Editor(tk.Toplevel):
         commitbtn.pack(side='right', padx=5, pady=5)
 
 
+
     def commit(self):
         for k,v in self.container.items():
             d = "{%s}" % (v.get("1.0", tk.END))

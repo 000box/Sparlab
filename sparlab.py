@@ -126,7 +126,7 @@ class App(tk.Tk):
             self.act_cfg = dict(ChainMap(*cfg))
             cfg = [open(DATAPATH + "\\" + self.settings["Action Files"][i], "r").close() for i in range(len(self.settings["Action Files"]))]
         except Exception as e:
-            with open(DATAPATH + "\\" + "action_editor_example.txt", "w") as f:
+            with open(DATAPATH + "\\" + "actions.txt", "w") as f:
                 f.write(str(tools.DEFAULT_ACTIONS))
                 f.close()
 
@@ -135,6 +135,10 @@ class App(tk.Tk):
         self.playing = False
         self.hks_on = False
         self.raw_out = False
+        self.joy_is_on = False
+        self.hotkeys_enabled = False
+        self.logging = False
+        self.out_disabled = False
 
         try:
             self.vjoy_type = self.settings['virtual joy type']
@@ -153,20 +157,12 @@ class App(tk.Tk):
         except TypeError as e:
             messagebox.showerror(title="Error", message=e)
 
-        self.logging = False
 
-        try:
-            self.gametitle = self.settings['game title']
-        except:
-            self.gametitle = "Game"
-        self.joy_is_on = False
-        self.hotkeys_enabled = False
+
         try:
             self.delay_tuners = {i:tk.StringVar(value=0.0) for i in eval(self.settings['Delay Variables'])}
         except:
             self.delay_tuners = {i:tk.StringVar(value=0.0) for i in self.settings['Delay Variables']}
-
-        self.togglelabs = []
 
 
         self.add_tab()
@@ -240,7 +236,6 @@ class App(tk.Tk):
         while self.q3.qsize():
             try:
                 info = self.q3.get(0)
-
                 outtb = self.last_update['outtextbox']
                 intb = self.last_update['intextbox']
                 startover = False
@@ -284,7 +279,7 @@ class App(tk.Tk):
                                 print("BEGINNING")
                                 startover = True
                                 begin = True
-                        if startover == True:
+                        if startover == True and self.out_disabled == False:
                             preinsert = "]" if begin == False else ""
                             outtb.insert(tk.INSERT, preinsert, tag_name)
                             n_chars = outtb.count("1.0", tk.INSERT)
@@ -310,7 +305,7 @@ class App(tk.Tk):
                                 n_chars = outtb.count("1.0", tk.INSERT)
                                 startover = True
                         else:
-                            if joy == 'vjoy':
+                            if joy == 'vjoy' and self.out_disabled == False:
                                 outtb.insert(tk.INSERT, ",", tag_name)
                                 n_chars = outtb.count("1.0", tk.INSERT)
                     except KeyError:
@@ -319,7 +314,7 @@ class App(tk.Tk):
 
                     try:
                         # if user has waited atleast 1 second and then PRESSES analog/btn (tp of 1 or 3), make new line
-                        if t < 75 and startover == False and joy == 'pjoy' and t >= 0.002:
+                        if t < 75 and startover == False and joy == 'pjoy' and t >= 0.002 and self.out_disabled == False:
 
                             preinsert = "," if n_chars[0] > 1 else ""
                             ttext = "{}'delay({})'".format(preinsert, round(t, 3))
@@ -347,14 +342,15 @@ class App(tk.Tk):
                     try:
 
                         if (startover == True and a != 'la_n' and 'delay' not in a) or (startover == False and 'delay' not in a):
-                            if joy == 'pjoy':
+                            if joy == 'pjoy' and self.out_disabled == False:
                                 preinsert = "," if startover == False else ""
                                 outtb.insert(tk.END, "{}'{}'".format(preinsert, a), tag_name)
                                 n_chars = outtb.count("1.0", tk.INSERT)
                                 if self.logging == True:
                                     self.logger.add_to_string(a)
                             else:
-                                outtb.insert(tk.END, "'{}'".format(a), tag_name)
+                                if self.out_disabled == False:
+                                    outtb.insert(tk.END, "'{}'".format(a), tag_name)
                                 n_chars = outtb.count("1.0", tk.INSERT)
                             self.last_action_info = {'action': a, 'type': tp, 'joy': joy}
 
@@ -383,7 +379,8 @@ class App(tk.Tk):
 
                     try:
                         r = info['raw']
-                        outtb.insert(tk.INSERT, r)
+                        if self.out_disabled == False:
+                            outtb.insert(tk.INSERT, r)
                     except KeyError:
                         pass
 
@@ -515,7 +512,7 @@ class App(tk.Tk):
                         ('Save', self.save_as, None),
                         ('Exit', self.destroy, None)]),
                         'Edit': (editmenu, [('Settings', self.settings_editor, None), ("Action Editor", self.action_editor, None)]),
-                        'Toggle': (togmenu, [('Joy State', self.toggle_controller, None), ('X Axis ', self.toggle_xaxis, None),   #('Play', self.play, None),
+                        'Toggle': (togmenu, [('VJoy On/Off', self.toggle_controller, None), ('X Axis ', self.toggle_xaxis, None), ('Output Enabled/Disabled', self.toggle_output, None),   #('Play', self.play, None),
                         ('Hotkeys', self.toggle_hotkeys, None), ('Log', self.toggle_logging, None), ('Output View', self.toggle_output_view, None)]),
                         'Tools': (toolmenu, [('Action Reference', self.view_reference, None), ('Device Report', self.view_device_report, None)]),
                         'Help': (helpmenu, [('User Guide', self.view_user_guide, None),
@@ -701,8 +698,12 @@ class App(tk.Tk):
         clearbtn.pack(side='right', anchor='ne', padx=5)
 
         s = "View Raw" if self.raw_out == True else "View String"
-        self.rawbtn = ttk.Button(self.outvarframe, text='View Raw', width=12, command=lambda: self.toggle_output_view())
+        self.rawbtn = ttk.Button(self.outvarframe, text=s, width=12, command=lambda: self.toggle_output_view())
         self.rawbtn.pack(side='right', anchor='ne', padx=5)
+
+        s = "Enable Out" if self.out_disabled == True else "Disable Out"
+        self.outdbtn = ttk.Button(self.outvarframe, text=s, width=12, command=lambda: self.toggle_output())
+        self.outdbtn.pack(side='right', anchor='ne', padx=5)
 
         outframe = tk.Frame(tab)
 
@@ -853,6 +854,13 @@ class App(tk.Tk):
         self.q1.put(info)
         self.q4.put(info)
 
+    def toggle_output(self):
+        if self.out_disabled == True:
+            self.out_disabled = False
+            self.outdbtn.config(text="Disable Out")
+        else:
+            self.out_disabled = True
+            self.outdbtn.config(text="Enable Out")
 
     def play(self):
         intb = self.last_update['intextbox']
