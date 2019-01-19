@@ -506,3 +506,6 @@ def get_device_path(h_info, interface_data, ptr_info_data = None):
 
     # extract string only
     return dev_inter_detail_data.get_string()
+
+
+
