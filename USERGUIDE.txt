@@ -1,32 +1,7 @@
-﻿
-
-The tools that fighting gamers use to train rely on source code in order to operate.
-Because of this, fighters are limited to the built-in tools provided by the Game Developers
-for that game.
-
-Problem:
-
-Gamers have to re-setup every single time you train. This is a slow and tedious process that makes training a lot more difficult.
-It is difficult for gamers to understand what they are doing right and wrong when learning how to execute combos.
-This often results in endless searches for frame data on
-Google and example videos on YouTube. Which later results in having to download 3rd party injection tools to read frame data. This does provide the solution of recording your controller,
-but what about for inputting the perfectly placed combo? Even if you set the combo, how do you keep everything else on point? How do you make it even more perfect? Keeping all of these
-boxes takes time that fighters will never get back. Now what if the source code changes? Now you have to find new character or asset codes that could take hours or DAYS to find.
+﻿Sparlab User Guide
 
 
-Solution:
-
-Sparlab. A tool that allows fighting gamers to record their controller, simulate input + delay time, AND use for more than one .
-
-Applications:
-
-Optimize new/existing combos to gain significant timing advantages.
--Find WHAT WORKS by simulating combos and tuning them to perfection.
--Compare WHAT WORKS with the output results of your PJoy to measure your performance WHILE you train.
-
-Less Hassle, more time to train.
--Save your combos, load them for later use.
--Load similar or identical combos for other fighting games.
+Version: 1.0.5 
 
 
 Features:
@@ -78,10 +53,10 @@ Once it is downloaded, refer to the documentation.txt file in the source code.
 
 2) When you toggle your joy state, something like 'Xbox 360 Controller_1' should show up. Make sure 'Xbox Configuration Support' is checked for that controller
 
-3) In your game controller settings, you can map your bindings by giving each 'button' a hotkey in your Action Editor.
-,
+3) Make sure your VJoy is mapped with the bindings in your game's settings. You can use the VJoy's Hotkeys (HK details listed under Action Editor) to achieve that. 
 
-'Physical Joystick Configuration:
+
+Physical Joystick Configuration:
 
 
 Your keyboard is the default PJoy Device when you launch Sparlab for the first time.
@@ -89,7 +64,7 @@ Your keyboard is the default PJoy Device when you launch Sparlab for the first t
 If you want to switch to an XBOX joystick, follow these steps:
 
 1) Make sure your XBOX device is plugged into a USB port on your PC, then verify that its listing in your Device Report. ('Tools/Device Report' in your top command bar)
-2) In Settings (inside 'Edit' menu), change 'physical joy type' to 'xbox', press 'Commit', then restart the app.
+2) In Settings (inside 'Edit' menu), change 'physical joy type' to 'xbox', press 'Commit'. 
 3) After committing any changes, try using your joystick and check the 'Out' feed for output.
 4) You can go into Settings and scroll down to 'Button-Function Map' to realign buttons. (See 'Button-Function Map' below for more details)
 
@@ -104,7 +79,9 @@ If you want to switch to an Arcade Stick, follow these steps:
 
 If you wish to not use any PJoy device, you can set it to 'None'.
 
-,
+
+See Troubleshooting at the bottom of this guide if you are having any issues. 
+
 
 'Settings:
 
@@ -132,7 +109,7 @@ Below are descriptions for each settings:
 'Button-Function Map: Mapping of buttons to ('press function', 'release function'). Arcade Stick Only: Must have valid vendor ID. All buttons have a valid page ID, each button must have a valid usage ID. \
 Hat switch must have one valid usage id. You can find this information by viewing your Device Report (In tools) ,
 
-'Action Editor:
+Action Editor:
 
 
 This is where the app pulls from when you use hotkeys or play notation scripts. Each tab in the editor represents a file you have listed in your 'Action Files' in Settings.
@@ -209,6 +186,27 @@ Other Functions:
 'string(action)': The string of 'action'. This function allows you to perform strings inside of strings.
 
 
+Hotkeys:
+
+These are useful for testing your newly created Actions or if you need to navigate around a menu with your VJoy. 
+
+Hotkeys must be surrounded by quotations. (e.g 'h+k', "space", 'u')
+
+Each key for your hotkey must be separated by a '+' if you want to apply multiple keys. (e.g. 'space+u', 'shift+/+.')
+
+If you want to use '\' as a hotkey, it has to be listed like this: '\\' 
+
+If you want to use a single quotation, it has to be listed like this: "'" (cannot be ''')
+
+
+
+Notation: 
+
+A notation is a variable representing an Action you want to be played in your script, which means that the Action being represented MUST have a valid String attached with it. 
+
+In Action Editor, Notations must be surrounded by quotations (e.g 'd/f', "u/r", '1') 
+ 
+
 Creating your Notation Script:
 
 
@@ -222,19 +220,82 @@ Follow these guidelines for successful conversion of notations:
 - All notations must be included in actions inside your Action Editor.
 
 
+Delay Variables: 
+
+These are for inserting into your script or strings in your Action Editor to simulate delay time in seconds. 
+
+-Example: 
+
+	dv1 = 0.015 
+
+	A notation script of [ 1 dv1 2 ] would be equal to a string of [ *1's String* *delay(0.015)* *2's String* ] 
+
+	A string that looks like ['a_d','delay(dv1)','a_u'] would be equal to a string of ['a_d','delay(0.015)','a_u']
+
+
 In-app commands:
 
 
 Start Log: writes your outputs to a .csv file in your 'logs' folder (YOURNAME/APPDATA/Roaming/Sparlab/version#/logs).
 Clear: removes all text in your 'Out' feed.
-View Raw: converts existing and future string output in your 'Out' feed to its raw format.
+View PJoy Raw: converts your PJoy's future string output in your 'Out' feed to its raw format.
+Disable Out: Disables the 'Out' Feed. 
 Start Delay: the delay time before your script starts running from the beginning.
 Fixed Delay: the delay time between every notation in your script.
 Delay Variables: these can be inserted into your script to simulate delay (in seconds).
 Enable HKs: turns on the hotkeys you have defined in your Action Editor.
 Flip X Axis: switches the directions of all functions that have an X Direction (e.g. 'dpr_d' --> 'dpl_d', 'la_dl' --> 'la_dr').
 Turn VJoy On: plugs in your VJoy Device.
+Refresh: re-commits your settings. This is useful if you are changing devices. 
 
+
+
+Troubleshooting:
+
+
+Error: '_ is not a valid device type. Change your pjoy type in Settings': 
+
+-Your PJoy has to be one of the following: 'xbox', 'arcade stick', 'keyboard', or 'None'. Go into your Settings, change it to one of those, press 'commit'.  
+
+Error: "Key '___' is not mapped to any known key.", ValueError(...': 
+
+-This error will occur if you are using an invalid key on your keyboard when your keyboard is the assigned physical joy type. The key that is giving you the error is likely not on your keyboard. Go 
+back into Settings, scroll down to 'Button-Function Map/', scroll to 'keyboard' underneath it, change the key to a valid key, press Commit. You may have to reset the app to get the key to work. 
+
+Error/Warning: 'invalid syntax(<string>, x...': 
+
+-Error/Warning(s) will occur if you leave out a quotation, curly bracket, bracket, colon, or comma. Go to line 'x' and look for the missing item, insert the missing character, then re-commit. 
+-If quote: make sure it matches to the one on the other side of the phrase before you re-commit. 
+
+-Error: 'A device with vendor id "__" could not be found' 
+ 
+-This happens when you have 'arcade stick' as your 'physical joy type' and you are not using a vendor id that is listed in your Device Report. Refer to the Arcade Stick instructions in 'Physical Joystick Configuration' above.
+
+Error: 'No value was found for _' 
+
+-This occurs when you have 'arcade stick' set as your PJoy and you forgot to map a button for your device. Refer to the Arcade Stick instructions in 'Physical Joystick Configuration' above.
+
+Error: 'No input report found for page ID "_" (vendor= "_",....' 
+
+-This occurs if you have an invalid page ID listed inside your PJoy configurations when using an Arcade Stick. Refer to the Arcade Stick instructions in 'Physical Joystick Configuration' above.
+
+
+
+
+
+
+Blank Action Editor/Settings File: you likely had a typo and need to fix it inside your APPDATA Files. 
+	In your file explorer, go to YOURNAME/AppData/Roaming/Sparlab/*version#*, open up the file that is blank in the app, correct the typo, save the file, and restart the app. 
+
+App not loading: you may need to clear your app's memory. To do that, go to YOURNAME/AppData/Roaming/Sparlab, copy (backup) the Sparlab folder to a non-AppData location such as your desktop, 
+delete the Sparlab folder inside of YOURNAME/AppData/Roaming/, and relaunch the app. If that doesn't work, try restarting your computer. If that doesn't solve the problem, go to www.sparlab.org and install the newest version. 
+If it is still not loading, post the issue to the Sparlab community (https://www.reddit.com/r/Sparlab/) or the project repository (https://github.com/johnward-umensch/Sparlab), you can also try downloading the newest release 
+from the releases tab in the github repository. 
+
+Getting same error after making correction: this bug will hopefully be fixed in the next version. Until then, restarting the app should solve your problem. 
+
+
+Error/technical issue was not listed in this guide: visit the Sparlab community (https://www.reddit.com/r/Sparlab/) and/or the github repository (https://github.com/johnward-umensch/Sparlab)
 
 
 

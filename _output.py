@@ -4,7 +4,7 @@ import time
 from hook import keyboard
 from msvcrt import kbhit
 import sys
-import pywinusb.hid as hid
+import hook.hid as hid
 
 
 class Outputter(Process):
@@ -34,22 +34,23 @@ class Outputter(Process):
     def send_hid_report(self, outfile):
         try:
             hid.core.show_hids(output = outfile)
-        except:
-            pass
+        except Exception as e:
+            print("HID Error: ", e)
+            self.q3.put({'warning': 'HID information was not able to be sent to your Device Report.'})
 
 
     def xbox_test(self, fromq=False):
         self.joys = XInputJoystick.enumerate_devices()
 
         if not self.joys:
-            self.q3.put({'warning': 'No xbox device was found. Change your pjoy type in settings, then restart the app.'})
-            if fromq == True:
-                quit()
-            return
+            self.q3.put({'warning': 'No xbox device was found. Change your pjoy type in settings'})
+            self.joy_type == 'None'
+            self.settings['physical joy type'] = self.joy_type
+            self.none_process()
         else:
             # physical joystick
             self.pjoy = self.joys[0]
-            print('using %d' % self.pjoy.device_number)
+            # print('using %d' % self.pjoy.device_number)
             battery = self.pjoy.get_battery_information()
             # virtual joystick (temp)
             # self.vjoy = self.joys[0]
@@ -83,50 +84,46 @@ class Outputter(Process):
                             self.b2f_map = self.settings["Button-Function Map"]
                             self.analog_vals = self.settings['analog configs']
                             self.as_cfg = self.b2f_map['arcade stick']
-                            print("self.as_cfg = ", self.as_cfg)
+                            # print("self.as_cfg = ", self.as_cfg)
                             self.joy_type = self.settings['physical joy type']
                             self.na = self.settings['default neutral allowance']
                         else:
                             settings = info['settings']
-
                             if settings != self.settings:
                                 self.settings = settings
                                 joy_type = self.settings['physical joy type']
                                 b2f_map = self.settings["Button-Function Map"]
                                 analog_vals = self.settings['analog configs']
-                                as_cfg = self.b2f_map['arcade stick']
+                                as_cfg = b2f_map['arcade stick']
 
-                                if any([joy_type != self.joy_type, analog_vals != self.analog_vals, as_cfg != self.as_cfg, b2f_map != self.b2f_map]):
-                                    if joy_type != self.joy_type:
-                                        change_process = True
-                                        if self.joy_type == 'arcade stick':
-                                            self.device.close()
-                                        elif self.joy_type == 'keyboard':
-                                            self.remove_hooks()
-                                    else:
-                                        change_process = False
+                                # if any([joy_type != self.joy_type, analog_vals != self.analog_vals, as_cfg != self.as_cfg, b2f_map != self.b2f_map]):
 
-                                    self.b2f_map = b2f_map
-                                    self.analog_vals = analog_vals
-                                    self.as_cfg = as_cfg
-                                    self.joy_type = joy_type
+                                if self.joy_type == 'arcade stick':
+                                    self.device.close()
+                                elif self.joy_type == 'keyboard':
+                                    self.remove_hooks()
 
-                                    if change_process == True:
 
-                                        if self.joy_type == 'xbox':
-                                            self.xbox_test()
-                                            self.xbox_process()
-                                        elif self.joy_type == 'keyboard':
-                                            print("keyboard switch")
-                                            self.kb_test()
-                                            self.kb_process()
-                                        elif self.joy_type == 'arcade stick':
-                                            self.arcadestick_process()
-                                        elif self.joy_type == 'None':
-                                            self.none_process()
-                                        else:
-                                            self.q3.put({'error': "{} is not a valid device type. Change your pjoy type in Settings, then restart the app.".format(self.joy_type)})
-                                            quit()
+                                self.b2f_map = b2f_map
+                                self.analog_vals = analog_vals
+                                self.as_cfg = as_cfg
+                                self.joy_type = joy_type
+
+                                if self.joy_type == 'xbox':
+                                    self.xbox_test()
+                                    self.xbox_process()
+                                elif self.joy_type == 'keyboard':
+                                    # print("keyboard switch")
+                                    self.kb_process()
+                                elif self.joy_type == 'arcade stick':
+                                    self.arcadestick_process()
+                                elif self.joy_type == 'None':
+                                    self.none_process()
+                                else:
+                                    self.q3.put({'error': "{} is not a valid device type. Change your pjoy type in Settings".format(self.joy_type)})
+                                    self.joy_type = 'None'
+                                    self.settings['physical joy type'] = self.joy_type
+                                    self.none_process()
 
                     except Exception as e:
                         print("SETTINGS (out): ", e)
@@ -166,7 +163,7 @@ class Outputter(Process):
                 break
             except AttributeError:
                 time.sleep(0.1)
-                print("waiting on settings...")
+                # print("waiting on settings...")
 
         xbhooks = self.settings["Button-Function Map"]["xbox"]
         pj_report = """
@@ -229,13 +226,28 @@ class Outputter(Process):
 
             if axis not in ['lt', 'rt']:
                 action = self.get_stick_dir(axis, value)
-            else:
-                action = int(value)
 
+                # show correct analog on UI
+                try:
+                    if axis == 'ra':
+                        action = action.replace(action[0], "r")
+                    elif axis == 'la':
+                        action = action.replace(action[0], "l")
+                except AttributeError:
+                    # action = None
+                    pass
+
+            else:
+
+                n = int(value)
+                if n == 1:
+                    action = "{}_d".format(axis)
+                else:
+                    action = "{}_u".format(axis)
             if action not in [None, 'None']:
                 pressed = 1 # by default
                 dontq = False # 'dont queue info, but define it in self.lai, do this to filter out actions'
-                if action in ['la_n','ra_n']:
+                if action in ['la_n','ra_n','rt_u','lt_u']:
                     # only count neutral when RESETTING to neutral position (cv must have smaller eucl dist. to hv than lv has to cv)
                     pressed = 0
                     if laia == action:
@@ -246,11 +258,14 @@ class Outputter(Process):
                         dontq = True
 
 
-                if time_bw_events > self.na and pressed == 1:
+                if time_bw_events > self.na and laip == 0:
                     startover = True
                     time_bw_events = 0
                 else:
                     startover = False
+
+                # if time_bw_events <= 0.009:
+                #     time_bw_events = 0
 
                 if dontq == True:
                     self.last_action_info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'value': value, 'tmark': laitm}
@@ -279,7 +294,11 @@ class Outputter(Process):
             if x > v['x min'] and x < v['x max'] and y > v['y min'] and y < v['y max']:
                 return k
 
-        return None
+
+
+
+
+
 
     def keyevent(self, event):
         now = event.time
@@ -305,7 +324,8 @@ class Outputter(Process):
             try:
                 action = self.b2f_map['keyboard'][key][0] if type == 'down' else self.b2f_map['keyboard'][key][1]
 
-                if action == laia and time_bw_events < 0.01:
+                if action == laia:
+                    self.last_action_info = {'start over': False, 'action': laia, 'type': laisv, 'time': time_bw_events, 'joy': 'pjoy', 'value': laisv, 'tmark': laitm}
                     return
 
                 pressed = 1 if type == 'down' else 0
@@ -322,11 +342,12 @@ class Outputter(Process):
                 self.last_action_info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'value': pressed, 'tmark': now}
 
             except Exception as e:
-                self.q3.put({'warning': e})
+                pass
 
 
     def add_kb_hooks(self):
         self.handles = []
+
         for k,v in self.b2f_map['keyboard'].items():
             try:
                 handle1 = keyboard.hook_key(k, lambda e: e.event_type == keyboard.KEY_DOWN or self.keyevent(e), suppress=False)
@@ -357,7 +378,7 @@ class Outputter(Process):
                 break
             except AttributeError:
                 time.sleep(0.1)
-                print("waiting on settings...")
+                # print("waiting on settings...")
 
         self.add_kb_hooks()
 
@@ -616,7 +637,7 @@ class Outputter(Process):
                 break
             except AttributeError:
                 time.sleep(0.1)
-                print("waiting on arcade stick cfgs...")
+                # print("waiting on arcade stick cfgs...")
 
 
         # adding buttons
@@ -634,24 +655,45 @@ class Outputter(Process):
         self.last_action_info = {'start over': True, 'action': 'None', 'type': 0, 'time': 0, 'joy': 'pjoy', 'value': (0, 0), 'tmark': time.clock()}
 
         vID = self.as_cfg['vendor id']
+
+        # default pj report, changes when variables are defined
+        pj_report = """
+                    Physical Joystick Type: {}
+                    Hooks: {}
+                    Joystick Instance: {}
+                    """.format(self.joy_type, [], 'None')
+
+
+
         try:
             self.device = hid.HidDeviceFilter(vendor_id = vID).get_devices()[0]
             self.device.open()
+        except IndexError as e:
+            self.q3.put({'error': 'A device with vendor id "{}" could not be found'.format(vID)})
+            # print("618: ", e)
+            self.joy_type = "None"
+            self.settings['physical joy type'] = self.joy_type
+            self.q3.put({'pjoy report': pj_report})
+            self.none_process()
         except Exception as e:
-            self.q3.put({'error': e})
-            print("618: ", e)
-            return
+            print("error: ", e)
+            self.q3.put({'error': 'An error occurred when attempting to point to a device with vendor id "{}". This might be happening because your device is not plugged in.'.format(vID)})
+            self.joy_type = "None"
+            self.settings['physical joy type'] = self.joy_type
+            self.q3.put({'pjoy report': pj_report})
+            self.none_process()
 
         if not self.device:
             self.q3.put({'error': 'A device with vendor id "{}" could not be found'.format(vID)})
-            return
+            self.joy_type = "None"
+            self.settings['physical joy type'] = self.joy_type
+            self.none_process()
 
         hooks = []
         for info in workers:
             worker_added = False
 
             # communication b/w parent thread
-
             pID = info['page id']
             uID = info['usage id']
             vals = info['values']
@@ -666,38 +708,42 @@ class Outputter(Process):
 
             try:
                 usage_hook = hid.get_full_usage_id(pID, uID)
-
+                cont = True
             except Exception as e:
                 self.q3.put({'error': e})
-                print("647: ", e)
-                return
-            # browse input reports
-            all_input_reports = self.device.find_input_reports()
-            # print("ALL INPUT REPORTS: ", all_input_reports)
+                # print("647: ", e)
+                cont = False
 
-            for input_report in all_input_reports:
-                if usage_hook in input_report:
+            if cont == True:
+                # browse input reports
+                all_input_reports = self.device.find_input_reports()
+                # print("ALL INPUT REPORTS: ", all_input_reports)
 
-                    print("\nMonitoring {0.vendor_name} {0.product_name} "\
-                            "device.\n".format(self.device))
+                for input_report in all_input_reports:
+                    if usage_hook in input_report:
 
-                    # add event handler (example of other available
-                    # events: EVT_PRESSED, EVT_RELEASED, EVT_ALL, ...)
+                        # print("\nMonitoring {0.vendor_name} {0.product_name} "\
+                        #         "device.\n".format(self.device))
 
+                        # add event handler (example of other available
+                        # events: EVT_PRESSED, EVT_RELEASED, EVT_ALL, ...)
 
-                    self.device.add_event_handler(usage_hook, lambda event, value, v=vals, t=type: self.arcadestick_event(event, value, vals_=v, type_=t), hid.HID_EVT_CHANGED) #level usage
-                                                                                                                            #   HID_EVT_CHANGED
-                    if input_interrupt_transfers:
-                        # poll the current value (GET_REPORT directive),
-                        # allow handler to process result
-                        input_report.get()
+                        try:
+                            self.device.add_event_handler(usage_hook, lambda event, value, v=vals, t=type: self.arcadestick_event(event, value, vals_=v, type_=t), hid.HID_EVT_CHANGED) #level usage
+                            cont = True
+                        except KeyError as e:
+                            self.q3.put({'error': "An error occured while attempting to add an event handler for usage id {}: {},".format(uID, e)})
+                            cont = False                                                                                                             #   HID_EVT_CHANGED
 
-                    hooks.append("Usage Hook: {} --> {}; ".format(usage_hook, vals))
-                    worker_added = True
+                        if cont == True:
+                            if input_interrupt_transfers:
+                                # poll the current value (GET_REPORT directive),
+                                # allow handler to process result
+                                input_report.get()
 
-            if worker_added == False:
-                self.q3.put({'error': 'No input report found for page ID "{}" (vendor= "{}", values= "{}"'.format(pID, vID, vals)})
-                return
+                            hooks.append("Usage Hook: {} --> {}; ".format(usage_hook, vals))
+                            worker_added = True
+
 
         pj_report = """
                     Physical Joystick Type: {}
@@ -714,7 +760,7 @@ class Outputter(Process):
             return
         except Exception as e:
             self.q3.put({'error': e})
-            print("692: ", e)
+            # print("692: ", e)
 
         self.device.close()
 
@@ -741,12 +787,23 @@ class Outputter(Process):
 
         time_bw_events = now - laitm
 
+
         if type_ == 'hat switch':
-            action = vals_[value]
+            try:
+                action = vals_[value]
+            except Exception as e:
+                self.q3.put({'error': "No hat switch value was found for {}.".format(e)})
+                return
+
             pressed = 1 if action != 'la_n' else 0
 
+
         else:
-            action = vals_[::-1][value]
+            try:
+                action = vals_[::-1][value]
+            except Exception as e:
+                self.q3.put({'error': "No button value was found for {}.".format(e)})
+                return
             pressed = value
 
 

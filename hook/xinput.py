@@ -18,7 +18,7 @@ import sys
 import time
 from operator import itemgetter, attrgetter
 from itertools import count, starmap
-from pyglet import event
+import pyglet.event as event
 
 # structs according to
 # http://msdn.microsoft.com/en-gb/library/windows/desktop/ee417001%28v=vs.85%29.aspx
@@ -283,7 +283,7 @@ class XInputJoystick(event.EventDispatcher):
         # if nlapos != olapos and ((t_newlax > 0.20 or t_newlax < -0.20) or (t_newlay > 0.20 or t_newlay < -0.20)) and \
         #     (abs(t_oldlax - t_newlax) > 0.00000000500000000 or abs(t_oldlay - t_newlay) > 0.00000000500000000):
         #     self.dispatch_event('on_axis', 'la', nlapos)
-        if nlapos != olapos and ((t_newlax > 0.02 or t_newlax < -0.02) or (t_newlay > 0.02 or t_newlay < -0.02)) and \
+        if nlapos != olapos and ((t_newlax > 0.08 or t_newlax < -0.08) or (t_newlay > 0.08 or t_newlay < -0.08)) and \
             (abs(t_oldlax - t_newlax) > 0.00000000500000000 or abs(t_oldlay - t_newlay) > 0.00000000500000000):
             self.dispatch_event('on_axis', 'la', nlapos)
 

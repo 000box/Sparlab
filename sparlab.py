@@ -9,6 +9,7 @@ from multiprocessing import Queue, freeze_support
 import webbrowser
 from collections import ChainMap
 import tools
+import sys
 
 
 __version__ = '1.0.5'
@@ -20,6 +21,14 @@ HID_REPORT = r"{}\hidreport.txt".format(DATAPATH)
 
 with open("USERGUIDE.txt", "r") as f:
     USERGUIDE = f.read()
+    f.close()
+
+with open("LICENSE", "r") as f:
+    LICENSE = f.read()
+    f.close()
+
+with open("ANTICHEATPOLICY.txt", "r") as f:
+    ANTICHEATPOLICY = f.read()
     f.close()
 
 #ff4242 (favorite color)
@@ -270,7 +279,7 @@ class App(tk.Tk):
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print(e)
+                        messagebox.showerror(title='Warning', message=e)
 
                     try:
                         startover = info['start over']
@@ -341,8 +350,10 @@ class App(tk.Tk):
 
                     try:
 
-                        if (startover == True and a != 'la_n' and 'delay' not in a) or (startover == False and 'delay' not in a):
+                        if (startover == True and a not in ['la_n','ra_n','lt_u','rt_u'] and 'delay' not in a) or (startover == False and 'delay' not in a):
                             if joy == 'pjoy' and self.out_disabled == False:
+                                lastact = self.last_action_info["action"]
+                                # if not (a in ['la_n', 'ra_n'] and t <= 0.009):
                                 preinsert = "," if startover == False else ""
                                 outtb.insert(tk.END, "{}'{}'".format(preinsert, a), tag_name)
                                 n_chars = outtb.count("1.0", tk.INSERT)
@@ -509,13 +520,13 @@ class App(tk.Tk):
         toolmenu = tk.Menu(self, tearoff=False)
         self.toggle_labels = {}
         self.submenus = {'File': (filemenu, [('New', self.new_file,None ), ('Open', self.open_file, None),
-                        ('Save', self.save_as, None),
+                        ('Save', self.save_as, None),('Refresh', self.refresh, None),
                         ('Exit', self.destroy, None)]),
                         'Edit': (editmenu, [('Settings', self.settings_editor, None), ("Action Editor", self.action_editor, None)]),
                         'Toggle': (togmenu, [('VJoy On/Off', self.toggle_controller, None), ('X Axis ', self.toggle_xaxis, None), ('Output Enabled/Disabled', self.toggle_output, None),   #('Play', self.play, None),
                         ('Hotkeys', self.toggle_hotkeys, None), ('Log', self.toggle_logging, None), ('Output View', self.toggle_output_view, None)]),
                         'Tools': (toolmenu, [('Action Reference', self.view_reference, None), ('Device Report', self.view_device_report, None)]),
-                        'Help': (helpmenu, [('User Guide', self.view_user_guide, None),
+                        'Help': (helpmenu, [('User Guide', self.view_user_guide, None), ('License', self.view_license, None), ('Anti-Cheat Policy', self.view_anticheatpolicy, None),
                          ('Community', self.view_community, None), ('Check for Update', self.check_for_update, None)])}
 
 
@@ -697,8 +708,8 @@ class App(tk.Tk):
         clearbtn = ttk.Button(self.outvarframe, text='Clear', width=8, command=lambda: self.delete_outtxt())
         clearbtn.pack(side='right', anchor='ne', padx=5)
 
-        s = "View Raw" if self.raw_out == True else "View String"
-        self.rawbtn = ttk.Button(self.outvarframe, text=s, width=12, command=lambda: self.toggle_output_view())
+        s = "View PJoy Str" if self.raw_out == True else "View PJoy Raw"
+        self.rawbtn = ttk.Button(self.outvarframe, text=s, width=14, command=lambda: self.toggle_output_view())
         self.rawbtn.pack(side='right', anchor='ne', padx=5)
 
         s = "Enable Out" if self.out_disabled == True else "Disable Out"
@@ -845,10 +856,10 @@ class App(tk.Tk):
     def toggle_output_view(self):
         if self.raw_out == True:
             self.raw_out = False
-            self.rawbtn.config(text='View Raw')
+            self.rawbtn.config(text='View PJoy Raw')
         else:
             self.raw_out = True
-            self.rawbtn.config(text='View String')
+            self.rawbtn.config(text='View PJoy Str')
 
         info = {'raw output': self.raw_out}
         self.q1.put(info)
@@ -923,7 +934,6 @@ class App(tk.Tk):
             self.highlight_script()
 
             self.q1.put(info)
-            self.q4.put(info)
 
         #self.overlay.pack(expand=True, fill='both')
 
@@ -1038,6 +1048,13 @@ class App(tk.Tk):
 
     def action_editor(self):
         popup = tools.Action_Editor(self, DATAPATH)
+
+    def view_license(self):
+        popup = tools.License(self, LICENSE)
+
+    def view_anticheatpolicy(self):
+        popup = tools.AntiCheatPolicy(self, ANTICHEATPOLICY)
+
 
     def pause(self):
         if self.playing == True:

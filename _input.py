@@ -17,22 +17,6 @@ class Inputter(multiprocessing.Process):
         # queue for getting info from 1st process
         self.q1, self.q2, self.q3, self.joy_n, self.joy_type = args
 
-        # Set up the GUI part
-
-        if self.joy_type == 'xbox':
-            self.joy = vjoy.VXBOX_Device(self.joy_n)
-
-            vjr =   """
-                    Virtual XBOX 360 Joystick: {}
-                    Virtual Bus Driver Exists: {}
-                    """.format(self.joy, self.joy.isVBusExists())
-
-        else:
-            self.q2.put({'error': "{} cannot be used as a virtual controller.\nIn your appdata's settings.txt file, change your joy type to 'xbox'\n and restart the app.".format(self.joy_type)})
-            return
-
-        self.q2.put({'vjoy report': vjr})
-
         self.running = True
         self.playing = False
         self.vjoy_on = False
@@ -48,7 +32,32 @@ class Inputter(multiprocessing.Process):
         self.pending = []
         # variable for making sure client process has been informed
         self.client_informed = False
-        # Start the periodic call in the GUI to check if the queue contains
+
+        if self.joy_type == 'xbox':
+            self.joy = vjoy.VXBOX_Device(self.joy_n)
+
+            vjr =   """
+                    Virtual XBOX 360 Joystick: {}
+                    Virtual Bus Driver Exists: {}
+                    """.format(self.joy, self.joy.isVBusExists())
+
+        else: #just default to 'xbox' for now.
+            # self.q2.put({'error': "{} cannot be used as a virtual controller.\nIn your appdata's settings.txt file, change your joy type to 'xbox'\n and restart the app.".format(self.joy_type)})
+            # return
+            self.joy = vjoy.VXBOX_Device(self.joy_n)
+
+            vjr =   """
+                    Virtual XBOX 360 Joystick: {}
+                    Virtual Bus Driver Exists: {}
+                    """.format(self.joy, self.joy.isVBusExists())
+
+
+
+
+        self.q2.put({'vjoy report': vjr})
+
+
+
     def check_for_vbus(self):
         if self.joy.isVBusExists() == False:
             self.q2.put({'vbusnotexist': False})
@@ -130,6 +139,7 @@ class Inputter(multiprocessing.Process):
 
                     try:
                         self.vjoy_on = info['vjoy on']
+                        self.refresh()
                     except KeyError as e:
                         pass
                         # print("vjoy on: ", e)
@@ -295,8 +305,6 @@ class Inputter(multiprocessing.Process):
                     logging.warning('Iterstring needs to be evaluated')
                     iterstring = eval(string[1])
 
-                self.update_queue({'notation': string[0], 'index': ind})
-                # print("ITERSTRING: ", iterstring)
                 try:
 
                     for iter, a in enumerate(iterstring):
