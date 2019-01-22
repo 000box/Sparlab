@@ -1,7 +1,7 @@
 from hook.xinput import *
 from multiprocessing import Process
 import time
-from hook import keyboard
+from hook import kb
 from msvcrt import kbhit
 import sys
 import hook.hid as hid
@@ -81,52 +81,58 @@ class Outputter(Process):
                     try:
                         if init == True:
                             self.settings = info['settings']
-                            self.b2f_map = self.settings["Button-Function Map"]
+                            self.button_vals = self.settings["button configs"]
                             self.analog_vals = self.settings['analog configs']
-                            self.as_cfg = self.b2f_map['arcade stick']
+                            self.as_cfg = self.button_vals['arcade stick']
+                            self.kb_cfg = self.button_vals['keyboard']
                             # print("self.as_cfg = ", self.as_cfg)
                             self.joy_type = self.settings['physical joy type']
-                            self.na = self.settings['default neutral allowance']
                         else:
                             settings = info['settings']
                             if settings != self.settings:
                                 self.settings = settings
                                 joy_type = self.settings['physical joy type']
-                                b2f_map = self.settings["Button-Function Map"]
+                                btn_vals = self.settings["button configs"]
                                 analog_vals = self.settings['analog configs']
-                                as_cfg = b2f_map['arcade stick']
+                                btn_cfg = self.settings["button configs"]
+                                kb_cfg = self.button_vals['keyboard']
+                                as_cfg = self.button_vals['arcade stick']
 
-                                # if any([joy_type != self.joy_type, analog_vals != self.analog_vals, as_cfg != self.as_cfg, b2f_map != self.b2f_map]):
+                                if any([joy_type != self.joy_type, analog_vals != self.analog_vals, as_cfg != self.as_cfg, btn_vals != self.button_vals]):
 
-                                if self.joy_type == 'arcade stick':
-                                    self.device.close()
-                                elif self.joy_type == 'keyboard':
-                                    self.remove_hooks()
+                                    if self.joy_type == 'arcade stick':
+                                        self.device.close()
+                                    elif self.joy_type == 'keyboard':
+                                        self.listener.stop()
+                                        del self.listener
 
+                                    self.button_vals = btn_vals
+                                    self.analog_vals = analog_vals
+                                    self.as_cfg = as_cfg
+                                    self.joy_type = joy_type
+                                    self.kb_cfg = kb_cfg
 
-                                self.b2f_map = b2f_map
-                                self.analog_vals = analog_vals
-                                self.as_cfg = as_cfg
-                                self.joy_type = joy_type
+                                    if self.joy_type == 'xbox':
+                                        self.xbox_test()
+                                        self.xbox_process()
+                                    elif self.joy_type == 'keyboard':
+                                        # print("keyboard switch")
+                                        self.kb_process()
+                                    elif self.joy_type == 'arcade stick':
+                                        self.arcadestick_process()
+                                    elif self.joy_type == 'None':
+                                        self.none_process()
+                                    else:
+                                        self.q3.put({'error': "{} is not a valid device type. Change your pjoy type in Settings".format(self.joy_type)})
+                                        self.joy_type = 'None'
+                                        self.settings['physical joy type'] = self.joy_type
+                                        self.none_process()
 
-                                if self.joy_type == 'xbox':
-                                    self.xbox_test()
-                                    self.xbox_process()
-                                elif self.joy_type == 'keyboard':
-                                    # print("keyboard switch")
-                                    self.kb_process()
-                                elif self.joy_type == 'arcade stick':
-                                    self.arcadestick_process()
-                                elif self.joy_type == 'None':
-                                    self.none_process()
-                                else:
-                                    self.q3.put({'error': "{} is not a valid device type. Change your pjoy type in Settings".format(self.joy_type)})
-                                    self.joy_type = 'None'
-                                    self.settings['physical joy type'] = self.joy_type
-                                    self.none_process()
-
+                    except KeyError as e:
+                        pass
                     except Exception as e:
                         print("SETTINGS (out): ", e)
+                        self.q3.put({'error': e})
                         # pass
 
                         #print("HKS ON (out): ", e)
@@ -136,18 +142,8 @@ class Outputter(Process):
                         #print("FACING: ", e)
                         pass
 
-                    # try:
-                    #     self.na = info['neutral allowance']
-                    # except Exception as e:
-                    #     pass
-
             except Exception as e:
                 msg = "{} (out): {}".format(type(e).__name__, e.args)
-
-
-# self.b2f_map = self.cfg['button to notation map']
-
-# 'button to notation map': {(13, 1): {'Notation': None, 'Hotkey': None, 'Function': 'a_d'},
 
 
     def none_process(self):
@@ -165,7 +161,10 @@ class Outputter(Process):
                 time.sleep(0.1)
                 # print("waiting on settings...")
 
-        xbhooks = self.settings["Button-Function Map"]["xbox"]
+        self.last_tmark = time.clock()
+        self.pressed = []
+        self.current_axis = 'la_n'
+        xbhooks = self.settings["button configs"]["xbox"]
         pj_report = """
                     Physical Joystick Type: {}
                     Available Joysticks: {}
@@ -177,62 +176,82 @@ class Outputter(Process):
         @self.pjoy.event
         def on_button(button, pressed):
             now = time.clock()
-
-            lait = self.last_action_info["time"]
-            laia = self.last_action_info["action"]
-            laip = self.last_action_info["type"]
-            laij = self.last_action_info["joy"]
-            laiso = self.last_action_info["start over"]
-            laisv = self.last_action_info['value']
-            laitm = self.last_action_info['tmark']
-
-            time_bw_events = now - laitm
+            dontq = False
+            oppo = 1 if pressed == 0 else 0
+            time_bw_events = now - self.last_tmark
             #print('button', button, pressed)
             if self.raw_out == True:
-                self.q3.put({'raw': "[event: {}, value: {}],".format(button, pressed)})
+                self.q3.put({'raw': "[event: {}, value: {}]\n".format(button, pressed), 'joy': 'pjoy'})
                 return
-            if pressed != laip or button != laia:
-                action = self.b2f_map['xbox'][button][::-1][pressed]
 
-                if time_bw_events > self.na and pressed == 1:
-                    startover = True
-                    time_bw_events = 0
+            act = self.button_vals['xbox'][button][::-1][pressed]
+
+            if button not in [None, 'None']:
+                if button not in self.pressed and pressed == 1:
+
+                    if len(self.pressed) == 0:
+                        startover = True
+                        time_bw_events = 0
+                        self.pressed = []
+                        self.pressed.append(button)
+                        action = "]\n['{}'".format(act)
+                    elif time_bw_events > 0:
+                        startover = False
+                        if time_bw_events >= 0.005:
+                            action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                        else:
+                            action = ",'{}'".format(act)
+                        self.pressed.append(button)
+                    else:
+                        dontq = True
+                        print("top else: self.pressed = ", self.pressed)
                 else:
                     startover = False
+                    if pressed == 0:
+                        try:
+                            self.pressed.remove(button)
+                            if time_bw_events >= 0.005:
+                                action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                            else:
+                                action = ",'{}'".format(act)
 
-                info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy'}
-                self.q3.put(info)
+                        except ValueError:
+                            print("value error under except: self.pressed = ", self.pressed)
+                            dontq = True
+                    else:
+                        print("dontq under else: self.pressed = ", self.pressed)
+                        dontq = True
 
-                self.last_action_info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'value': laisv, 'tmark': now}
+
+                if not dontq:
+                    info = {'start over': startover, 'action': action, 'joy': 'pjoy'}
+                    self.q3.put(info)
+
+                    self.last_tmark = now
+
+
 
 
         @self.pjoy.event
         def on_axis(axis, value):
             now = time.clock()
 
-            lait = self.last_action_info["time"]
-            laia = self.last_action_info["action"]
-            laip = self.last_action_info["type"]
-            laij = self.last_action_info["joy"]
-            laiso = self.last_action_info["start over"]
-            laisv = self.last_action_info['value']
-            laitm = self.last_action_info['tmark']
 
-            time_bw_events = now - laitm
+            time_bw_events = now - self.last_tmark
 
             if self.raw_out == True:
-                self.q3.put({'raw': "[event: {}, value: {}],".format(axis, value)})
+                self.q3.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'pjoy'})
                 return
 
             if axis not in ['lt', 'rt']:
-                action = self.get_stick_dir(axis, value)
+                act = self.get_stick_dir(axis, value)
 
                 # show correct analog on UI
                 try:
                     if axis == 'ra':
-                        action = action.replace(action[0], "r")
+                        act = act.replace(act[0], "r")
                     elif axis == 'la':
-                        action = action.replace(action[0], "l")
+                        act = act.replace(act[0], "l")
                 except AttributeError:
                     # action = None
                     pass
@@ -241,40 +260,73 @@ class Outputter(Process):
 
                 n = int(value)
                 if n == 1:
-                    action = "{}_d".format(axis)
+                    act = "{}_d".format(axis)
                 else:
-                    action = "{}_u".format(axis)
-            if action not in [None, 'None']:
-                pressed = 1 # by default
+                    act = "{}_u".format(axis)
+
+            if act not in ['None', None]:
+
                 dontq = False # 'dont queue info, but define it in self.lai, do this to filter out actions'
-                if action in ['la_n','ra_n','rt_u','lt_u']:
+                possible_axis_presses = ['la_dr', 'la_r', 'la_d', 'la_dl', 'la_l', 'la_ul', 'la_u', 'la_ur',
+                                        'ra_dr', 'ra_r', 'ra_d', 'ra_dl', 'ra_l', 'ra_ul', 'ra_u', 'ra_ur', 'rt_d', 'lt_d']
+                possible_neutrals = ['la_n','ra_n','rt_u','lt_u']
+
+                if act in possible_neutrals:
                     # only count neutral when RESETTING to neutral position (cv must have smaller eucl dist. to hv than lv has to cv)
                     pressed = 0
-                    if laia == action:
-                        dontq = True
-
-                else:
-                    if laia == action:
-                        dontq = True
-
-
-                if time_bw_events > self.na and laip == 0:
-                    startover = True
-                    time_bw_events = 0
-                else:
                     startover = False
+                    if act == self.current_axis or time_bw_events < 0.01:
+                        dontq = True
+                    else:
+                        for a in possible_axis_presses:
+                            if a in self.pressed:
+                                self.pressed.remove(a)
 
-                # if time_bw_events <= 0.009:
-                #     time_bw_events = 0
+                        if time_bw_events >= 0.005:
+                            action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                        else:
+                            action = ",'{}'".format(act)
 
-                if dontq == True:
-                    self.last_action_info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'value': value, 'tmark': laitm}
+                else:
+                    pressed = 1
+                    if act in self.pressed or time_bw_events < 0.01:
+                        dontq = True
+                    else:
+                        for a in possible_axis_presses + possible_neutrals:
+                            if a in self.pressed:
+                                self.pressed.remove(a)
+
+                    if dontq == True or time_bw_events < 0:
+                        return
+                    # if time_bw_events < 0:
+                    #     self.last_tmark = time.time()
+
+
+                    if time_bw_events > 0.2 and len(self.pressed) == 0:
+                        startover = True
+                        time_bw_events = 0
+                        self.pressed = []
+                        self.pressed.append(act)
+                        action = "]\n['{}'".format(act)
+                    else:
+                        startover = False
+                        self.pressed.append(act)
+                        if time_bw_events >= 0.005:
+                            action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                        else:
+                            action = ",'{}'".format(act)
+
+            # if time_bw_events <= 0.009:
+            #     time_bw_events = 0
+
+                if dontq:
                     return
 
-                info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy'}
+                info = {'start over': startover, 'action': action, 'joy': 'pjoy'}
 
                 self.q3.put(info)
-                self.last_action_info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'value': value, 'tmark': now}
+                self.last_tmark = now
+                self.current_axis = act
 
 
         while True:
@@ -288,89 +340,79 @@ class Outputter(Process):
 
     def get_stick_dir(self, axis, value):
         x, y = value
-
+        x, y = (x * 65536, y * 65536)
         for k,v in self.analog_vals.items():
-
             if x > v['x min'] and x < v['x max'] and y > v['y min'] and y < v['y max']:
                 return k
 
 
+    def kb_process(self):
 
+        def on_press(key):
+            now = time.time()
 
+            try: k = key.char # single-char keys
+            except: k = key.name # other keys
 
+            if k in list(self.button_vals['keyboard']): # keys interested
+                # self.keys.append(k) # store it in global-like variable
 
+                act = self.button_vals['keyboard'][k][0]
+                value = 1
+                time_bw_events = now - self.last_tmark
 
-    def keyevent(self, event):
-        now = event.time
-
-        lait = self.last_action_info["time"]
-        laia = self.last_action_info["action"]
-        laip = self.last_action_info["type"]
-        laij = self.last_action_info["joy"]
-        laiso = self.last_action_info["start over"]
-        laisv = self.last_action_info['value']
-        laitm = self.last_action_info['tmark']
-
-        time_bw_events = now - laitm
-
-        type = event.event_type
-
-        if self.raw_out == True:
-            self.q3.put({'raw': "[event: {}, value: {}],".format(event, event.scan_code)})
-            return
-
-        key = self.translate_scancode(event.scan_code).lower()
-        if key != None:
-            try:
-                action = self.b2f_map['keyboard'][key][0] if type == 'down' else self.b2f_map['keyboard'][key][1]
-
-                if action == laia:
-                    self.last_action_info = {'start over': False, 'action': laia, 'type': laisv, 'time': time_bw_events, 'joy': 'pjoy', 'value': laisv, 'tmark': laitm}
-                    return
-
-                pressed = 1 if type == 'down' else 0
-
-                if time_bw_events > self.na and pressed == 1:
+                if time_bw_events > 0.2 and len(self.pressed) == 0:
                     startover = True
                     time_bw_events = 0
+                    action = "]\n['{}'".format(act)
                 else:
                     startover = False
+                    action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
 
-                info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy'}
+                if self.raw_out:
+                    self.q3.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
+                    return
 
+
+                if act not in self.pressed:
+                    info = {'joy': 'pjoy', 'action': action, 'start over': startover}
+                    self.q3.put(info)
+                    self.last_tmark = now
+                    self.pressed.append(act)
+
+        def on_release(key):
+            now = time.time()
+
+            try: k = key.char # single-char keys
+            except: k = key.name # other keys
+
+            print("k release before: ", k)
+
+            if k in list(self.button_vals['keyboard']): # keys interested
+                # self.keys.append(k) # store it in global-like variable
+                print("k release after: ", k)
+                act = self.button_vals['keyboard'][k][1]
+                actspress = self.button_vals['keyboard'][k][0]
+                value = 0
+                time_bw_events = now - self.last_tmark
+                startover = False
+
+                action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+
+                if self.raw_out:
+                    self.q3.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
+                    return
+
+                info = {'joy': 'pjoy', 'action': action, 'start over': startover}
                 self.q3.put(info)
-                self.last_action_info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'value': pressed, 'tmark': now}
+                self.last_value = value
+                self.last_tmark = now
+                self.last_act = act
+                try:
+                    self.pressed.remove(actspress)
+                except ValueError:
+                    pass
 
-            except Exception as e:
-                pass
-
-
-    def add_kb_hooks(self):
-        self.handles = []
-
-        for k,v in self.b2f_map['keyboard'].items():
-            try:
-                handle1 = keyboard.hook_key(k, lambda e: e.event_type == keyboard.KEY_DOWN or self.keyevent(e), suppress=False)
-                self.handles.append(handle1)
-                handle2 = keyboard.hook_key(k, lambda e: e.event_type == keyboard.KEY_UP or self.keyevent(e), suppress=False)
-                self.handles.append(handle2)
-                # hk = keyboard.add_hotkey(k, self.keydown, args=(v[0],))
-            except Exception as e:
-                self.q3.put({'error': e})
-
-        kbhooks = self.settings["Button-Function Map"]["keyboard"]
-        pj_report = """
-                    Physical Joystick Type: {}
-                    Hooks: {}
-                    Joystick Instance: {}
-                    """.format(self.joy_type, kbhooks, keyboard._listener)
-        self.q3.put({'pjoy report': pj_report})
-
-    def remove_hooks(self):
-        keyboard.unhook_all()
-
-
-    def kb_process(self):
         while True:
             self.processIncoming(init=True)
             try:
@@ -380,248 +422,17 @@ class Outputter(Process):
                 time.sleep(0.1)
                 # print("waiting on settings...")
 
-        self.add_kb_hooks()
+        self.pressed = []
+        self.last_value = 0
+        self.last_tmark = time.time()
+        self.last_act = None
+        self.listener = kb.keyboard.Listener(on_press=on_press, on_release=on_release)
+        self.listener.start() # start to listen on a separate thread
+
 
         while True:
             self.processIncoming()
             time.sleep(0.5)
-
-
-    def translate_scancode(self, scancode, to_dk=True):
-        dk = {
-            "1":            0x02,
-            "2":            0x03,
-            "3":            0x04,
-            "4":            0x05,
-            "5":            0x06,
-            "6":            0x07,
-            "7":            0x08,
-            "8":            0x09,
-            "9":            0x0A,
-            "0":            0x0B,
-
-            "NUMPAD1":      0x4F,       "NP1":      0x4F,
-            "NUMPAD2":      0x50,       "NP2":      0x50,
-            "NUMPAD3":      0x51,       "NP3":      0x51,
-            "NUMPAD4":      0x4B,       "NP4":      0x4B,
-            "NUMPAD5":      0x4C,       "NP5":      0x4C,
-            "NUMPAD6":      0x4D,       "NP6":      0x4D,
-            "NUMPAD7":      0x47,       "NP7":      0x47,
-            "NUMPAD8":      0x48,       "NP8":      0x48,
-            "NUMPAD9":      0x49,       "NP9":      0x49,
-            "NUMPAD0":      0x52,       "NP0":      0x52,
-            "DIVIDE":       0xB5,       "NPDV":     0xB5,
-            "MULTIPLY":     0x37,       "NPM":      0x37,
-            "SUBSTRACT":    0x4A,       "NPS":      0x4A,
-            "ADD":          0x4E,       "NPA":      0x4E,
-            "DECIMAL":      0x53,       "NPDC":     0x53,
-            "NUMPADENTER":  0x9C,       "NPE":      0x9C,
-
-            "A":            0x1E,
-            "B":            0x30,
-            "C":            0x2E,
-            "D":            0x20,
-            "E":            0x12,
-            "F":            0x21,
-            "G":            0x22,
-            "H":            0x23,
-            "I":            0x17,
-            "J":            0x24,
-            "K":            0x25,
-            "L":            0x26,
-            "M":            0x32,
-            "N":            0x31,
-            "O":            0x18,
-            "P":            0x19,
-            "Q":            0x10,
-            "R":            0x13,
-            "S":            0x1F,
-            "T":            0x14,
-            "U":            0x16,
-            "V":            0x2F,
-            "W":            0x11,
-            "X":            0x2D,
-            "Y":            0x15,
-            "Z":            0x2C,
-
-            "F1":           0x3B,
-            "F2":           0x3C,
-            "F3":           0x3D,
-            "F4":           0x3E,
-            "F5":           0x3F,
-            "F6":           0x40,
-            "F7":           0x41,
-            "F8":           0x42,
-            "F9":           0x43,
-            "F10":          0x44,
-            "F11":          0x57,
-            "F12":          0x58,
-
-            "UP":           0xC8,
-            "LEFT":         0xCB,
-            "RIGHT":        0xCD,
-            "DOWN":         0xD0,
-
-            "ESC":          0x01,
-            "SPACE":        0x39,       "SPC":      0x39,
-            "RETURN":       0x1C,       "ENT":      0x1C,
-            "INSERT":       0xD2,       "INS":      0xD2,
-            "DELETE":       0xD3,       "DEL":      0xD3,
-            "HOME":         0xC7,
-            "END":          0xCF,
-            "PRIOR":        0xC9,       "PGUP":     0xC9,
-            "NEXT":         0xD1,       "PGDN":     0xD1,
-            "BACK":         0x0E,
-            "TAB":          0x0F,
-            "LCONTROL":     0x1D,       "LCTRL":    0x1D,
-            "RCONTROL":     0x9D,       "RCTRL":    0x9D,
-            "LSHIFT":       0x2A,       "LSH":      0x2A,
-            "RSHIFT":       0x36,       "RSH":      0x36,
-            "LMENU":        0x38,       "LALT":     0x38,
-            "RMENU":        0xB8,       "RALT":     0xB8,
-            "LWIN":         0xDB,
-            "RWIN":         0xDC,
-            "APPS":         0xDD,
-            "CAPITAL":      0x3A,       "CAPS":     0x3A,
-            "NUMLOCK":      0x45,       "NUM":      0x45,
-            "SCROLL":       0x46,       "SCR":      0x46,
-
-            "MINUS":        0x0C,       "MIN":      0x0C,
-            "LBRACKET":     0x1A,       "LBR":      0x1A,
-            "RBRACKET":     0x1B,       "RBR":      0x1B,
-            "SEMICOLON":    0x27,       "SEM":      0x27,
-            "APOSTROPHE":   0x28,       "APO":      0x28,
-            "GRAVE":        0x29,       "GRA":      0x29,
-            "BACKSLASH":    0x2B,       "BSL":      0x2B,
-            "COMMA":        0x33,       "COM":      0x33,
-            "PERIOD":       0x34,       "PER":      0x34,
-            "SLASH":        0x35,       "SLA":      0x35,
-        }
-
-        # virtual keys
-        vk = {
-            "1":            0x31,
-            "2":            0x32,
-            "3":            0x33,
-            "4":            0x34,
-            "5":            0x35,
-            "6":            0x36,
-            "7":            0x37,
-            "8":            0x38,
-            "9":            0x39,
-            "0":            0x30,
-
-            "NUMPAD1":      0x61,       "NP1":      0x61,
-            "NUMPAD2":      0x62,       "NP2":      0x62,
-            "NUMPAD3":      0x63,       "NP3":      0x63,
-            "NUMPAD4":      0x64,       "NP4":      0x64,
-            "NUMPAD5":      0x65,       "NP5":      0x65,
-            "NUMPAD6":      0x66,       "NP6":      0x66,
-            "NUMPAD7":      0x67,       "NP7":      0x67,
-            "NUMPAD8":      0x68,       "NP8":      0x68,
-            "NUMPAD9":      0x69,       "NP9":      0x69,
-            "NUMPAD0":      0x60,       "NP0":      0x60,
-            "DIVIDE":       0x6F,       "NPDV":     0x6F,
-            "MULTIPLY":     0x6A,       "NPM":      0x6A,
-            "SUBSTRACT":    0x6D,       "NPS":      0x6D,
-            "ADD":          0x6B,       "NPA":      0x6B,
-            "DECIMAL":      0x6E,       "NPDC":     0x6E,
-            "NUMPADENTER":  0x0D,       "NPE":      0x0D,
-
-            "A":            0x41,
-            "B":            0x42,
-            "C":            0x43,
-            "D":            0x44,
-            "E":            0x45,
-            "F":            0x46,
-            "G":            0x47,
-            "H":            0x48,
-            "I":            0x49,
-            "J":            0x4A,
-            "K":            0x4B,
-            "L":            0x4C,
-            "M":            0x4D,
-            "N":            0x4E,
-            "O":            0x4F,
-            "P":            0x50,
-            "Q":            0x51,
-            "R":            0x52,
-            "S":            0x53,
-            "T":            0x54,
-            "U":            0x55,
-            "V":            0x56,
-            "W":            0x57,
-            "X":            0x58,
-            "Y":            0x59,
-            "Z":            0x5A,
-
-            "F1":           0x70,
-            "F2":           0x71,
-            "F3":           0x72,
-            "F4":           0x73,
-            "F5":           0x74,
-            "F6":           0x75,
-            "F7":           0x76,
-            "F8":           0x77,
-            "F9":           0x78,
-            "F10":          0x79,
-            "F11":          0x7A,
-            "F12":          0x7B,
-
-            "UP":           0x26,
-            "LEFT":         0x25,
-            "RIGHT":        0x27,
-            "DOWN":         0x28,
-
-            "ESC":          0x1B,
-            "SPACE":        0x20,       "SPC":      0x20,
-            "RETURN":       0x0D,       "ENT":      0x0D,
-            "INSERT":       0x2D,       "INS":      0x2D,
-            "DELETE":       0x2E,       "DEL":      0x2E,
-            "HOME":         0x24,
-            "END":          0x23,
-            "PRIOR":        0x21,       "PGUP":     0x21,
-            "NEXT":         0x22,       "PGDN":     0x22,
-            "BACK":         0x08,
-            "TAB":          0x09,
-            "LCONTROL":     0xA2,       "LCTRL":    0xA2,
-            "RCONTROL":     0xA3,       "RCTRL":    0xA3,
-            "LSHIFT":       0xA0,       "LSH":      0xA0,
-            "RSHIFT":       0xA1,       "RSH":      0xA1,
-            "LMENU":        0xA4,       "LALT":     0xA4,
-            "RMENU":        0xA5,       "RALT":     0xA5,
-            "LWIN":         0x5B,
-            "RWIN":         0x5C,
-            "APPS":         0x5D,
-            "CAPITAL":      0x14,       "CAPS":     0x14,
-            "NUMLOCK":      0x90,       "NUM":      0x90,
-            "SCROLL":       0x91,       "SCR":      0x91,
-
-            "MINUS":        0xBD,       "MIN":      0xBD,
-            "LBRACKET":     0xDB,       "LBR":      0xDB,
-            "RBRACKET":     0xDD,       "RBR":      0xDD,
-            "SEMICOLON":    0xBA,       "SEM":      0xBA,
-            "APOSTROPHE":   0xDE,       "APO":      0xDE,
-            "GRAVE":        0xC0,       "GRA":      0xC0,
-            "BACKSLASH":    0xDC,       "BSL":      0xDC,
-            "COMMA":        0xBC,       "COM":      0xBC,
-            "PERIOD":       0xBE,       "PER":      0xBE,
-            "SLASH":        0xBF,       "SLA":      0xBF,
-        }
-
-        # convert numpad keys to user's intended keys
-        numpad = {"NUMPAD8": 'w',
-                    "NUMPAD2": 's',
-                    "NUMPAD6": 'd',
-                    "NUMPAD4": 'a'}
-
-        if to_dk == True:
-            for k,v in dk.items():
-                if scancode == v:
-                    if k in list(numpad):
-                        return numpad[k]
-                    return k
-            return None
 
 
     def arcadestick_process(self):
@@ -774,7 +585,7 @@ class Outputter(Process):
 
         # print("value: {}, event: {}".format(value, event))
         if self.raw_out == True:
-            self.q3.put({'raw': "[Event: {}, Value: {}],".format(event, value)})
+            self.q3.put({'raw': "[Event: {}, Value: {}]\n".format(event, value), 'joy': 'pjoy'})
             return
 
         lait = self.last_action_info["time"]
@@ -808,11 +619,13 @@ class Outputter(Process):
 
 
         # if pressed != laip or action != laia:
-        if time_bw_events > self.na and pressed == 1:
+        if time_bw_events > 0.7 and pressed == 1:
             startover = True
             time_bw_events = 0
+            action = "]\n['{}'".format(action)
         else:
             startover = False
+            action = ",'delay({})','{}'".format(round(time_bw_events, 3), action)
 
 
         info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy'}

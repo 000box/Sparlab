@@ -1,60 +1,250 @@
 import os
-from datetime import date
 from time import clock
 import csv
 import tkinter as tk
 from tkinter import ttk
 
-# mapping of bottom buttons to commands,
-#function that performs when user presses
+""" Future version? notebook library to replace ttk.Notebook inside Action Editor, you can resize frames with it
+import Pmw as pmw"""
 
 
-DEFAULT_SETTINGS = {'fps': 60, 'Fixed Delay': 0.00, 'Start Delay': 3.0, 'default direction': 'R', 'play hotkey': '0', 'flip x axis hotkey': '/', 'virtual joy port': 1, 'virtual joy type': 'xbox', 'analog configs': {'la_dl': {'x fix': -0x7999, 'y fix': -0x7999, 'x min': -0.5, 'x max': -0.213, 'y min': -0.5, 'y max': -0.213}, 'la_l': {'x fix': -0x7999, 'y fix': 0, 'x min': -0.51, 'x max': -0.213, 'y min': -0.213, 'y max': 0.213}, 'la_ul': {'x fix': -0x7999, 'y fix': 0x7999, 'x min': -0.5, 'x max': -0.214, 'y min': 0.213, 'y max': 0.5}, 'la_u': {'x fix': 0, 'y fix': 0x7999, 'x min': -0.213, 'x max': 0.213, 'y min': 0.212, 'y max': 0.51}, 'la_ur': {'x fix': 0x7999, 'y fix': 0x7999, 'x min': 0.214, 'x max': 0.5, 'y min': 0.213, 'y max': 0.5}, 'la_r': {'x fix': 0x7999, 'y fix': 0, 'x min': 0.214, 'x max': 0.51, 'y min': -0.212, 'y max': 0.213}, 'la_dr': {'x fix': 0x7999, 'y fix': -0x7999, 'x min': 0.213, 'x max': 0.5, 'y min': -0.5, 'y max': -0.213}, 'la_d': {'x fix': 0, 'y fix': -0x7999, 'x min': -0.214, 'x max': 0.214, 'y min': -0.51, 'y max': -0.213}, 'la_n': {'x fix': 0, 'y fix': 0, 'x min': -0.2, 'x max': 0.2, 'y min': -0.2, 'y max': 0.2}}, 'Delay Variables': ['dv1','dv2','dv3','dv4','dv5'], 'Button-Function Map': {'xbox': {1: ('dpu_d', 'dpu_u'), 2: ('dpd_d', 'dpd_u'), 3: ('dpl_d', 'dpl_u'), 4: ('dpr_d', 'dpr_u'), 5: ('start_d', 'start_u'), 6: ('back_d', 'back_u'), 7: ('None', 'None'), 8: ('None', 'None'), 9: ('lb_d', 'lb_u'), 10: ('rb_d', 'rb_u'), 13: ('a_d', 'a_u'), 14: ('b_d', 'b_u'), 15: ('x_d', 'x_u'), 16: ('y_d', 'y_u')},
-'keyboard': {'w': ('dpu_d', 'dpu_u'), 's': ('dpd_d', 'dpd_u'), 'a': ('dpl_d', 'dpl_u'), 'd': ('dpr_d', 'dpr_u'), 'b': ('start_d', 'start_u'), 'v': ('back_d', 'back_u'), 'e': ('lb_d', 'lb_u'), 'r': ('rb_d', 'rb_u'), '1': ('a_d', 'a_u'), '2': ('b_d', 'b_u'), '3': ('x_d', 'x_u'), '4': ('y_d', 'y_u')}, 'arcade stick': {'vendor id': 0x0e8f, 'buttons': {'page id': 0x9, 'usage ids': {0x1: ('a_d','a_u'), 0x5: ('x_d','x_u'), 0x6: ('y_d','y_u'), 0x2: ('b_d','b_u')}}, 'hat switch': {'page id': 0x1, 'usage id': 0x39, 'values': {0: 'la_u', 1: 'la_ur', 2: 'la_r', 3: 'la_dr', 4: 'la_d', 5: 'la_dl', 6: 'la_l', 7: 'la_ul', 15: 'la_n'}}}}, 'Action Files': ['action_editor_example.txt'], 'physical joy type': 'keyboard', 'outfeed max characters': 400, 'virtual joy text color': 'purple', 'physical joy text color': 'red', 'log type': 'comparison', 'default neutral allowance': 0.7}
+DEFAULT_SETTINGS = {
+                    'fps': 60,
+                    # 'Fixed Delay': 0.00,
+                    # 'Start Delay': 2.0,
+                    'default direction': 'R',
+                    'play hotkey': '0',
+                    'flip x axis hotkey': '/',
+                    'virtual joy port': 1,
+                    'virtual joy type': 'xbox',
+                    'analog configs':
+                                    {
+                                    'la_dl':
+                                             {
+                                            'x fix':	-31129,
+                                            'y fix':	-31129,
+                                            'x min':	-32768,
+                                            'x max':	-13959,
+                                            'y min':	-32768,
+                                            'y max':	-13959},
 
-DEFAULT_ACTIONS = { 'left punch': {'Notation': '1', 'Hotkey': 'None', 'String': ['x_d', 'delay(0.015)', 'x_u']},
-                    'right kick': {'Notation': '3', 'Hotkey': 'None', 'String': ['b_d', 'delay(0.015)', 'b_u']},
-                    'left kick': {'Notation': '4', 'Hotkey': 'l+p', 'String': ['a_d', 'delay(0.015)', 'a_u']},
-                    'right punch': {'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.015)', 'y_u']},
-                    'start': {'Notation': 'None', 'Hotkey': '`', 'String': ['start_d', 'delay(0.015)', 'start_u']},
-                    'double-dash': {'Notation': 'dd', 'Hotkey': 'None', 'String': ['la_r', 'delay(0.015)', 'la_n', 'delay(0.015)', 'la_r', 'delay(0.015)', 'la_n']},
-                    'right punch': {'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.015)', 'y_u']},
-                    'forward': {'Notation': 'f', 'Hotkey': 'None', 'String': ['la_r', 'delay(0.030)', 'la_n']},
-                    'backward': {'Notation': 'b', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
-                    'crouch': {'Notation': 'u', 'Hotkey': 'None', 'String': ['la_d', 'delay(0.030)', 'la_n']},
-                    'jump': {'Notation': 'd', 'Hotkey': 'None', 'String': ['la_u', 'delay(0.030)', 'la_n']}}
+                                    'la_l':
+                                             {
+                                            'x fix':	-31129,
+                                            'y fix':	0,
+                                            'x min':	-33430,
+                                            'x max':	-13959,
+                                            'y min':	-13959,
+                                            'y max':	13959},
+
+                                    'la_ul':
+                                             {
+                                            'x fix':	-31129,
+                                            'y fix':	31129,
+                                            'x min':	-32768,
+                                            'x max':	-13959,
+                                            'y min':	13959,
+                                            'y max':	32768},
+
+                                    'la_u':
+                                            {
+                                            'x fix':	0,
+                                            'y fix':	31129,
+                                            'x min':	-13959,
+                                            'x max':	13959,
+                                            'y min':	13959,
+                                            'y max':	33430},
+
+                                    'la_ur':
+                                            {
+                                            'x fix':	31129,
+                                            'y fix':	31129,
+                                            'x min':	14025,
+                                            'x max':	32768,
+                                            'y min':	13959,
+                                            'y max':	32768},
+
+                                    'la_r':
+                                            {
+                                            'x fix':	31129,
+                                            'y fix':	0,
+                                            'x min':	14025,
+                                            'x max':	33430,
+                                            'y min':	-13893,
+                                            'y max':	13959},
+
+                                    'la_dr':
+                                            {
+                                            'x fix':	31129,
+                                            'y fix':	-31129,
+                                            'x min':	13959,
+                                            'x max':	32768,
+                                            'y min':	-32768,
+                                            'y max':	-13959},
+
+                                    'la_d':
+                                            {
+                                            'x fix':	0,
+                                            'y fix':	-31129,
+                                            'x min':	-14025,
+                                            'x max':	14025,
+                                            'y min':	-33423,
+                                            'y max':	-13959},
+
+                                    'la_n':
+                                            {
+                                            'x fix':	0,
+                                            'y fix':	0,
+                                            'x min':	-13107,
+                                            'x max':	13107,
+                                            'y min':	-13107,
+                                            'y max':	13107}},
+
+                    'Delay Variables': ['dv1','dv2','dv3','dv4','dv5'],
+                    'button configs':
+                                        {'xbox':
+                                                {1: ('dpu_d', 'dpu_u'), 2: ('dpd_d', 'dpd_u'), 3: ('dpl_d', 'dpl_u'), 4: ('dpr_d', 'dpr_u'), 5: ('start_d', 'start_u'),
+                                                 6: ('back_d', 'back_u'), 7: ('None', 'None'), 8: ('None', 'None'), 9: ('lb_d', 'lb_u'), 10: ('rb_d', 'rb_u'), 13: ('a_d', 'a_u'),
+                                                 14: ('b_d', 'b_u'), 15: ('x_d', 'x_u'), 16: ('y_d', 'y_u')},
 
 
+
+                                        'keyboard': {'left': ('dpl_d', 'dpl_u'), 'up': ('dpu_d', 'dpu_u'), 'right': ('dpr_d', 'dpr_u'), 'down': ('dpd_d', 'dpd_u'), '1': ('a_d', 'a_u'),
+                                                    '2': ('b_d', 'b_u'), '3': ('x_d', 'x_u'), '4': ('y_d', 'y_u'), '-': ('back_d', 'back_u'), '+': ('start_d', 'start_u'),
+                                                    'r': ('rb_d', 'rb_u'), 'e': ('lb_d', 'lb_u'), 'q': ('lt_d', 'lt_u'), 't': ('rt_d', 'rt_u')},
+
+
+                                        'arcade stick':
+                                                        {'vendor id': 0x0e8f, 'buttons':
+                                                                                        {'page id': 0x9, 'usage ids':
+                                                                                                                {0x1: ('a_d','a_u'), 0x5: ('x_d','x_u'), 0x6: ('y_d','y_u'), 0x2: ('b_d','b_u')}},
+                                                                                'hat switch':
+                                                                                        {'page id': 0x1, 'usage id': 0x39, 'values':
+                                                                                                                                    {0: 'la_u', 1: 'la_ur', 2: 'la_r', \
+                                                                                                                                    3: 'la_dr', 4: 'la_d', \
+                                                                                                                                    5: 'la_dl', 6: 'la_l', \
+                                                                                                                                    7: 'la_ul', 15: 'la_n'}}}},
+
+
+
+
+
+
+
+
+                    'Action Files': ['ae_default.txt', 'ae_tekken.txt', 'ae_soulcalibur.txt'],
+                    'physical joy type': 'keyboard',
+                    # 'outfeed max characters': 400,
+                    'virtual joy text color': 'purple',
+                    'physical joy text color': 'red'}
+                    # 'default neutral allowance': 0.7}
+
+
+# So user can navigate around menu
+DEFAULT_ACTIONS = {'filename': 'ae_default.txt',
+                    'include': True,
+                    'action config':
+                                    { 'A': {'Notation': 'A', 'Hotkey': 'space+a', 'String': ['a_d', 'delay(0.015)', 'a_u']},
+                                        'B': {'Notation': 'B', 'Hotkey': 'space+b', 'String': ['b_d', 'delay(0.015)', 'b_u']},
+                                        'X': {'Notation': 'X', 'Hotkey': 'space+x', 'String': ['x_d', 'delay(0.015)', 'x_u']},
+                                        'Y': {'Notation': 'Y', 'Hotkey': 'space+y', 'String': ['y_d', 'delay(0.015)', 'y_u']},
+                                        'Start': {'Notation': 'None', 'Hotkey': 's+t', 'String': ['start_d', 'delay(0.015)', 'start_u']},
+                                        'Back': {'Notation': 'None', 'Hotkey': 'b+k', 'String': ['back_d','delay(0.015)','back_u']},
+                                        'RT': {'Notation': 'RT', 'Hotkey': 'r+t', 'String': ['rt_d', 'delay(0.015)', 'rt_u']},
+                                        'LT': {'Notation': 'LT', 'Hotkey': 'l+t', 'String': ['lt_d', 'delay(0.015)', 'lt_u']},
+                                        'LB': {'Notation': 'LB', 'Hotkey': 'l+b', 'String': ['lb_d', 'delay(0.015)', 'lb_u']},
+                                        'RB': {'Notation': 'RB', 'Hotkey': 'r+b', 'String': ['rb_d', 'delay(0.015)', 'rb_u']},
+                                        'DPU': {'Notation': 'DPU', 'Hotkey': 'd+p+u', 'String': ['dpu_d', 'delay(0.015)', 'dpu_u']},
+                                        'DPR': {'Notation': 'DPR', 'Hotkey': 'd+p+r', 'String': ['dpr_d', 'delay(0.015)', 'dpr_u']},
+                                        'DPL': {'Notation': 'DPL', 'Hotkey': 'd+p+l', 'String': ['dpl_d', 'delay(0.015)', 'dpl_u']},
+                                        'DPD': {'Notation': 'DPD', 'Hotkey': 'd+p+space', 'String': ['dpd_d', 'delay(0.015)', 'dpd_u']}}
+
+                    }
+
+TEKKEN_ACTIONS = {'filename': "ae_tekken.txt",
+                    'include': False,
+                    'action config':
+                                    { 'left punch': {'Notation': '1', 'Hotkey': 'None', 'String': ['x_d', 'delay(0.015)', 'x_u']},
+                                    'right kick': {'Notation': '3', 'Hotkey': 'None', 'String': ['b_d', 'delay(0.015)', 'b_u']},
+                                    'left kick': {'Notation': '4', 'Hotkey': 'l+p', 'String': ['a_d', 'delay(0.015)', 'a_u']},
+                                    'right punch': {'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.015)', 'y_u']},
+                                    'right punch': {'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.015)', 'y_u']},
+                                    'forward': {'Notation': 'f', 'Hotkey': 'None', 'String': ['la_r', 'delay(0.030)', 'la_n']},
+                                    'backward': {'Notation': 'b', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
+                                    'down-forward': {'Notation': 'd/f', 'Hotkey': 'None', 'String': ['la_dr', 'delay(0.015)', 'la_n']},
+                                    'up-forward': {'Notation': 'u/f', 'Hotkey': 'None', 'String': ['la_ur', 'delay(0.015)', 'la_n']},
+                                    'down-backward': {'Notation': 'd/b', 'Hotkey': 'None', 'String': ['la_dl', 'delay(0.015)', 'la_n']},
+                                    'up-backward': {'Notation': 'u/b', 'Hotkey': 'None', 'String': ['la_ul', 'delay(0.015)', 'la_n']},
+                                    'backward': {'Notation': 'b', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
+                                    'crouch': {'Notation': 'u', 'Hotkey': 'None', 'String': ['la_d', 'delay(0.030)', 'la_n']},
+                                    'jump': {'Notation': 'd', 'Hotkey': 'None', 'String': ['la_u', 'delay(0.030)', 'la_n']}}
+                }
+
+
+SOULCALIBUR_ACTIONS = {'filename': "ae_soulcalibur.txt",
+                        'include': False,
+                        'action config':
+                                        { 'A': {'Notation': 'A', 'Hotkey': 'None', 'String': ['x_d', 'delay(0.015)', 'x_u']},
+                                        'K': {'Notation': 'K', 'Hotkey': 'None', 'String': ['b_d', 'delay(0.015)', 'b_u']},
+                                        'G': {'Notation': 'G', 'Hotkey': 'None', 'String': ['a_d', 'delay(0.015)', 'a_u']},
+                                        'B': {'Notation': 'B', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.015)', 'y_u']},
+                                        'A+G': {'Notation': 'A+G', 'Hotkey': 'None', 'String': ['lt_d', 'delay(0.015)', 'lt_u']},
+                                        'A+B': {'Notation': 'A+B', 'Hotkey': 'None', 'String': ['lb_d', 'delay(0.015)', 'lb_u']},
+                                        'B+G': {'Notation': 'B+G', 'Hotkey': 'None', 'String': ['rb_d', 'delay(0.015)', 'rb_u']},
+                                        'A+B+K': {'Notation': 'A+B+K', 'Hotkey': 'None', 'String': ['rt_d', 'delay(0.015)', 'rt_u']},
+                                        'forward': {'Notation': '6', 'Hotkey': 'None', 'String': ['la_r', 'delay(0.030)', 'la_n']},
+                                        'backward': {'Notation': '4', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
+                                        'down-forward': {'Notation': '3', 'Hotkey': 'None', 'String': ['la_dr', 'delay(0.015)', 'la_n']},
+                                        'up-forward': {'Notation': '9', 'Hotkey': 'None', 'String': ['la_ur', 'delay(0.015)', 'la_n']},
+                                        'down-backward': {'Notation': '1', 'Hotkey': 'None', 'String': ['la_dl', 'delay(0.015)', 'la_n']},
+                                        'up-backward': {'Notation': '7', 'Hotkey': 'None', 'String': ['la_ul', 'delay(0.015)', 'la_n']},
+                                        'backward': {'Notation': '4', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
+                                        'crouch': {'Notation': '2', 'Hotkey': 'None', 'String': ['la_d', 'delay(0.030)', 'la_n']},
+                                        'jump': {'Notation': '8', 'Hotkey': 'None', 'String': ['la_u', 'delay(0.030)', 'la_n']}}
+                        }
+
+"""
+# Next Version
+
+# SFV Actions
+
+# DB Fighter Z
+
+# Guilty Gear
+
+# Mortal Kombat
+"""
+
+# Need below for sorting configs from least to most difficult to configure, but in future version, there needs to be a much more user-friendly UI to configure settings, hence the
+# descriptions and types (so everything doesnt have to show up in quotations)
 CATEGORIES = {
                 'General': {
                             'Action Files': {'type': 'list', 'Description': 'These APPDATA files are where your actions are imported from'},
                             'fps':  {'type': 'int', 'Description': 'Manipulates the time length used by the "j_f" function'},
-                            'Fixed Delay': {'type': 'float', 'Description': 'Delay between every action inside your script'},
-                            'Start Delay': {'type': 'float', 'Description': 'Delay before the 1st action in your script plays'},
+                            # 'Fixed Delay': {'type': 'float', 'Description': 'Delay between every action inside your script'},
+                            # 'Start Delay': {'type': 'float', 'Description': 'Delay before the 1st action in your script plays'},
                             'default direction': {'type': 'str', 'Description': 'Can be "R" or "L".'},
                             'play hotkey': {'type': 'str', 'Description': 'Toggles b/w Play and Pause'},
                             'flip x axis hotkey': {'type': 'str', 'Description': 'When flipped, any analog value with a non-zero x value is flipped.'},
                             'virtual joy port': {'type': 'int', 'Description': 'The "port" where your virtual joystick plugs into. Can be 1,2,3 or 4.'},
                             'physical joy type': {'type': 'str', 'Description': 'Can be "arcade stick", "xbox", or "keyboard".'},
-                            'outfeed max characters':  {'type': 'int', 'Description': 'Your outfeed box clears after surpassing this number.'},
                             'Delay Variables': {'type': 'list', 'Description': 'These are for inserting into your script/action strings to simulate delay.'},
                             'virtual joy text color': {'type': 'str', 'Description': 'The color of this joy\'s outfeed text.'},
                             'physical joy text color': {'type': 'str', 'Description': 'The color of this joy\'s outfeed text.'},
-                            'log type': {'type': 'str', 'Description': 'Can be "normal" (logs pj activity) or "comparison" (logs pj activity alongside your script\'s string value).'},
-                            'default neutral allowance': {'type': 'int', 'Description': 'When your pjoy is inactive for this amt. of time while you are in the middle of a string, the outfeed will end the string and start a new one.'},
                             'virtual joy type': {'type': 'str', 'Description': 'This setting must be equal to "xbox" for now.'}
                             },
 
                 'Advanced': {
                              'analog configs': {'type': 'dict', 'Description': '"x fix" & "y fix" are the configs used by your vjoy. "x min","x max","y min", & "y max" are used by your pjoy in order to categorize its analog states.'},
-                             'Button-Function Map': {'type': 'dict', 'Description': """Mapping of buttons to ('press function', 'release function'). Arcade Stick Only: Must have valid vendor ID. All buttons have a valid page ID, each button must have a valid usage ID. \
+                             'button configs': {'type': 'dict', 'Description': """Mapping of buttons to ('press function', 'release function'). Arcade Stick Only: Must have valid vendor ID. All buttons have a valid page ID, each button must have a valid usage ID. \
                                                                                     Hat switch must have one valid usage id. You can find this information by viewing your Device Report (In tools)."""},
                              }
                 }
 
 
+# deprecated
 class Action_Logger:
-    def __init__(self, master, path, type='normal',title=date.today(), vja=None):
+    def __init__(self, master, path, type='normal',title=None, vja=None):
         self.master = master
         self.type = type
 
@@ -113,9 +303,8 @@ class Action_Logger:
         except Exception as e:
             pass
 
-
-
-
+# deprecated till future version. This gives user something to refer to while creating strings, using hotkeys, etc.
+# for now, users will have to use the Action Editor (they're making changes there anyway)
 class PopupDoc(tk.Toplevel):
     def __init__(self, master, info):
         super().__init__(master)
@@ -149,7 +338,6 @@ class PopupDoc(tk.Toplevel):
             if v["String"] not in forbidden:
                 strings[k] = v["String"]
 
-
         # textbox for main keys
         tk.Label(self, text="Hotkeys", font="Verdana 12").pack(side="top")
         hkbox = tk.Text(self, width=8, height=5, state='normal')
@@ -176,6 +364,8 @@ class PopupDoc(tk.Toplevel):
 
         ttk.Button(self, text="Cancel", command=lambda: self.destroy()).pack(side='bottom', anchor='s', pady=5)
 
+
+# detailed report showing PJoy, VJoy, and detected USB devices plugged into PC
 class DeviceReport(tk.Toplevel):
     def __init__(self, master, info):
         super().__init__(master)
@@ -273,7 +463,7 @@ class Settings(tk.Toplevel):
 
         for i0, (k,v) in enumerate(self.settings.items()):
             if k in list(CATEGORIES["Advanced"]):
-                if k == 'Button-Function Map':
+                if k == 'button configs':
                     self.sbox.insert("{}.0".format(str(iter1 + 1)),"},\n")
                     iter1 += 1
                 if isinstance(k, str):
@@ -409,20 +599,8 @@ class Settings(tk.Toplevel):
         except SyntaxError as e:
             self.master.q2.put({'error': e})
 
-        # FOR TESTING
 
-        # shared_items = {}
-        # nonshared_items = {}
-        # for k,v in settings.items():
-        #     if k in self.settings and settings[k] == self.settings[k]:
-        #         shared_items[k] = v
-        #     else:
-        #         nonshared_items[k] = v
-        #
-        #
-        # print("shared items: ", shared_items)
-        # print("non-shared items: ", nonshared_items)
-
+# Allows users to create their own actions
 class Action_Editor(tk.Toplevel):
     def __init__(self, master, datapath):
         super().__init__(master)
@@ -436,15 +614,24 @@ class Action_Editor(tk.Toplevel):
         self.master = master
         self.datapath = datapath
         self.save_files = self.master.settings["Action Files"]
+        # pmw.initialise(self)
+        # self.note = pmw.Notebook(self,borderwidth=2,arrownavigation=True,tabpos='n')
+
         self.note = ttk.Notebook(self)
         self.note.pack(fill='both', expand=1)
 
         # container for text boxes
         self.container = {}
         for file in self.save_files:
+            # filename = "action_editor_file{}".format(len(self.note.tabs()) + 1)
             fileframe = tk.Frame(self)
             self.note.add(fileframe, text = file, compound='top')
 
+            # uncomment (and alter) if switching to pmw Notebook
+            # self.note._pageAttrs[file]['tabreqwidth'] = 200
+            # self.note._pageAttrs[file]['tabreqheight'] = 100
+            # self.note.component(file).configure(font= ('verdana',18 ,'bold italic'), \
+            #             fg= "black",bg="white",wraplength=150)
             tbox = tk.Text(fileframe, wrap = tk.NONE, borderwidth=0)
             vscroll1 = tk.Scrollbar(fileframe, orient=tk.VERTICAL, command=tbox.yview)
             hscroll1 = tk.Scrollbar(fileframe, orient=tk.HORIZONTAL, command=tbox.xview)
@@ -457,18 +644,36 @@ class Action_Editor(tk.Toplevel):
                 adic = eval(f.read())
                 f.close()
 
-            iter = 1
-            for i, (k,v) in enumerate(adic.items()):
-                if i == len(adic) - 1:
-                    ender = ""
-                else:
-                    ender = ","
 
-                tbox.insert("{}.0".format(iter), "'{}'".format(k) + ":\t\t\t" + str(v) + "{}\n\n".format(ender))
-                iter += 1
+            for i, (k,v) in enumerate(adic.items()):
+                if k == 'action config':
+                    tbox.insert(tk.INSERT, "'{}'".format(k) + ": {\n")
+
+                    for iter, (kk,vv) in enumerate(v.items()):
+                        if iter == len(v) - 1:
+                            ender = ""
+                        else:
+                            ender = ","
+                        tbox.insert(tk.INSERT, "\t\t'{}'".format(kk) + ":\t\t" + str(vv) + "{}\n".format(ender))
+                        iter += 1
+                    tbox.insert(tk.INSERT, "}")
+
+                else:
+                    if i == len(adic) - 1:
+                        ender = ""
+                    else:
+                        ender = ","
+
+                    insval = str(v) if ".txt" not in str(v) else "'{}'".format(v)
+                    tbox.insert(tk.INSERT, "'{}'".format(k) + ":\t\t\t" + insval + "{}\n".format(ender))
 
             self.container[file] = tbox
 
+        #PMW
+        # self.add_plus_tab(init=True)
+        # self.note.pack(fill='both', expand=1, padx=10, pady=10)
+
+        # self.note.setnaturalsize()
 
         btmframe = tk.Frame(self)
         btmframe.pack(side='top', fill='x')
@@ -478,6 +683,23 @@ class Action_Editor(tk.Toplevel):
         commitbtn = ttk.Button(btmframe, text="Commit", command=self.commit)
         commitbtn.pack(side='right', padx=5, pady=5)
 
+
+    # next version?
+
+    # def add_plus_tab(self, init=True):
+    #     if not init:
+    #         filename = len(self.note.tabs()) + 1
+    #         self.note.add(text="{}".format(filename)
+    #         self.note._pageAttrs[file]['tabreqwidth'] = 200
+    #         self.note._pageAttrs[file]['tabreqheight'] = 100
+    #         self.nb.component('{}-tab'.format(filename)).configure(font= ('verdana',18 ,'bold italic'), \
+    #                     fg= "black",bg="white",wraplength=150)
+    #
+    #     fileframe = self.note.add(text = '+')
+    #     self.note._pageAttrs[file]['tabreqwidth'] = 100
+    #     self.note._pageAttrs[file]['tabreqheight'] = 100
+    #     self.nb.component('+-tab').configure(font= ('verdana',18 ,'bold italic'), \
+    #                 fg= "black",bg="white",wraplength=150)
 
 
     def commit(self):
@@ -494,10 +716,14 @@ class Action_Editor(tk.Toplevel):
                     f.close()
             except Exception as e:
                 self.master.q2.put({'error': e})
+                return
+
+
 
         self.master.refresh()
 
 
+# opens USERGUIDE.txt file from main path
 class User_Guide(tk.Toplevel):
     def __init__(self, master, ug):
         super().__init__(master)
@@ -537,6 +763,7 @@ class User_Guide(tk.Toplevel):
         cancelbtn.pack(side='right', padx=5, pady=5)
 
 
+# opens LICENSE file from main path
 class License(tk.Toplevel):
     def __init__(self, master, l):
         super().__init__(master)
@@ -575,6 +802,7 @@ class License(tk.Toplevel):
         cancelbtn = ttk.Button(btmframe, text="Cancel", command=self.destroy)
         cancelbtn.pack(side='right', padx=5, pady=5)
 
+# To show that Sparlab is meant to be used for training
 class AntiCheatPolicy(tk.Toplevel):
     def __init__(self, master, ac):
         super().__init__(master)

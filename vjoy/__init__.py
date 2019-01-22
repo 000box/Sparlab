@@ -439,8 +439,10 @@ class VXBOX_Device(object):
             if self.is_on == False:
                 vj.PlugIn(self.id)
                 self.is_on = True
+                print("joystick turned on successfully")
                 return True
-        except:
+        except Exception as e:
+            print("CANNOT TURN ON JOYSTICK due to error: ", e)
             # print("controller already on or taken")
             return False
 

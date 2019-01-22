@@ -2,9 +2,7 @@ import multiprocessing
 from hook import keyboard
 import time
 import vjoy
-import logging
-
-logging.basicConfig(level=logging.INFO)
+import threading
 
 
 class Inputter(multiprocessing.Process):
@@ -13,7 +11,7 @@ class Inputter(multiprocessing.Process):
     """
 
     def __init__(self, args=None):
-        super().__init__(target=self.key_listener)
+        super().__init__(target=self.vjoy_process)
         # queue for getting info from 1st process
         self.q1, self.q2, self.q3, self.joy_n, self.joy_type = args
 
@@ -22,17 +20,17 @@ class Inputter(multiprocessing.Process):
         self.vjoy_on = False
         self.hks_enabled = False
         self.rest = True
+        self.raw_out = False
         # ignore action interval (set to False at end of loops)
-        self.iai = False
+        # self.iai = False
         #holds all hotkeys
         self.hotkeys = []
         self.hk_names = []
         #holds all action strings
         self.strings = []
-        self.pending = []
         # variable for making sure client process has been informed
         self.client_informed = False
-
+        # self.start_delay_t = None
         if self.joy_type == 'xbox':
             self.joy = vjoy.VXBOX_Device(self.joy_n)
 
@@ -51,12 +49,7 @@ class Inputter(multiprocessing.Process):
                     Virtual Bus Driver Exists: {}
                     """.format(self.joy, self.joy.isVBusExists())
 
-
-
-
         self.q2.put({'vjoy report': vjr})
-
-
 
     def check_for_vbus(self):
         if self.joy.isVBusExists() == False:
@@ -75,128 +68,163 @@ class Inputter(multiprocessing.Process):
                 if info is not None:
                     # True or False
                     try:
+                        self.actlist = info['actlist']
+                    except KeyError as e:
+                        pass
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                    try:
+                        self.raw_out = info['raw output']
+                    except KeyError as e:
+                        pass
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                    try:
                         self.act_cfg = info['actcfg']
                     except KeyError as e:
                         pass
-                        #print(e)
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        print("ACTCFG EXCEPTION: ", e)
                     try:
                         self.hks_enabled = info['hks enabled']
                         self.refresh()
                     except KeyError as e:
                         pass
-
+                    except Exception as e:
+                        print("HKS ENABLED: ", e)
+                        self.q3.put({'error': e})
                     try:
                         self.playing = info['playing']
-
-                        if self.playing == True:
-                            #logging.info('self.playing = True')
-                            self.rest = False
-                            #print"self.playing = True")
-                            #if self.strings == []:
-                            self.strings = info['actlist']
-                        else:
-                            #logging.info('self.playing = False')
-                            self.rest = True
-                            #print"self.playing = False")
-                            self.strings = []
-
-                        self.client_informed = True
-                        self.pending = []
-
+                        self.refresh(playing=True)
                     except KeyError as e:
                         pass
-                        #print("PLAYING EXCEPTION: ", e)
-
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        print("PLAYING EXCEPTION: ", e)
                     try:
                         n = int(info['joy'])
-                        #print("joy number: ", n)
-                        if n != self.joy_n:
-                            self.joy = vjoy.VXBOX_Device(n)
-
+                        self.refresh(joy=True, joy_n=n)
                     except KeyError as e:
                         pass
-
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        print("JOY EXCEPTION: ", e)
                     try:
                         self.settings = info['settings']
-                        self.fps = int(self.settings['fps'])
-                        self.defaultdir = self.settings['default direction']
-                        self.joy_type = self.settings['virtual joy type']
-                        self.act_int_t = float(self.settings['Fixed Delay'])
-                        self.start_delay_t = float(self.settings['Start Delay'])
+                        self.refresh(settings=True)
                     except KeyError as e:
-                        #print("SETTINGS: ", e)
                         pass
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        print("SETTINGS (IN) exception: ", e)
                     try:
                         self.custom_delays = info['delay vars']
-                        #print"new custom delays: ", self.custom_delays)
-                        self.fps = int(self.custom_delays['fps'])
-                        self.act_int_t = float(self.custom_delays['Fixed Delay'])
-                        self.start_delay_t = float(self.custom_delays['Start Delay'])
-                        # print("action interval: {}; custom delays: {}".format(self.act_int_t, self.custom_delays))
+                        # print("SELF.CUSTOM_DELAYS = ", self.custom_delays)
+                        # self.refresh(delays=True)
                     except KeyError as e:
-                        #print("custom delay error: ", e)
                         pass
-
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        print("CUSTOM DELAYS EXCEPTION: ", e)
                     try:
                         self.vjoy_on = info['vjoy on']
-                        self.refresh()
+                        self.refresh(vjoy_on=True)
                     except KeyError as e:
                         pass
-                        # print("vjoy on: ", e)
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        print("VJOY EXCEPTION: ", e)
                     try:
                         self.facing = info['facing']
                     except KeyError as e:
-                        #print("FACING: ", e)
                         pass
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        print("FACING EXCEPTION: ", e)
                     try:
                         _ = info['refresh']
                         self.refresh()
-                    except:
+                    except KeyError as e:
                         pass
-
+                    except Exception as e:
+                        print("REFRESH EXCEPTION: ", e)
+                        self.q3.put({'error', e})
                     try:
                         if info['vjoy on'] == True:
-                            # print("turn vjoy ON")
-                            # throw error if bus driver doesn't exist
-                            self.check_for_vbus()
-                            # turn on controller
-                            self.joy.TurnOn()
                             self.vjoy_on = True
+                            self.refresh(vjoy_on=True)
                         else:
-                            # print("turn vjoy OFF")
-                            #print"hks off")
-                            # turn off controller
-                            self.joy.TurnOff()
                             self.vjoy_on = False
-                            # unbind hotkeys
-                            for k in self.hotkeys:
-                                try:
-                                    keyboard.remove_hotkey(k)
-                                except:
-                                    pass
-                            # empty containers
-                            self.strings = []
-                            self.hotkeys = []
-                            self.hk_names = []
-
+                            self.refresh(vjoy_on=True)
                     except KeyError as e:
-                        msg = "{} (out): {}".format(type(e).__name__, e.args)
-                        # print("HKS (In): ", msg)
-
+                        pass
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        print("VJOY ON EXCEPTION: ", e)
 
 
             except Exception as e:
-                msg = "{}: {}".format(type(e).__name__, e.args)
-                # print("Inp Process Inc: ", msg)
+                print("PI ERROR: ", e)
+                self.q3.put({'error': e})
+                # msg = "{}: {}".format(type(e).__name__, e.args)
 
-        # end = time.time()
-        # print("P2 Process Incoming speed: ", end - begin)
-
-    def endApplication(self):
-        self.running = False
 
     # mainly for resetting hotkeys
-    def refresh(self):
+    def refresh(self, vjoy_on=False, hks_enabled=False, settings=False, playing=False, joy=False, joy_n=0, actlist=None):
+
+        # if delays:
+        #     # self.fps = int(self.custom_delays['fps'])
+        #     # print("sElF.fPs = ", self.fps)
+        #     try:
+        #         self.act_int_t = float(self.custom_delays['Fixed Delay'])
+        #         self.start_delay_t = float(self.custom_delays['Start Delay'])
+        #     except Exception as e:
+        #         print("REFRESH DELAYS ERROR: ", e)
+
+        if vjoy_on:
+            if self.vjoy_on:
+
+                # notifies client if vbus needs to be installed
+                self.check_for_vbus()
+                # turn on controller
+                if not self.joy.is_on:
+                    self.joy.TurnOn()
+            else:
+                self.joy.TurnOff()
+                # unbind hotkeys (if any exist)
+                for k in self.hotkeys:
+                    try:
+                        keyboard.remove_hotkey(k)
+                    except:
+                        pass
+                # empty containers
+                self.strings = []
+                self.hotkeys = []
+                self.hk_names = []
+
+        elif joy:
+            if joy_n != self.joy_n:
+                del self.joy
+                self.joy = vjoy.VXBOX_Device(joy_n)
+
+
+        elif playing:
+            if self.playing == True:
+                self.rest = False
+                self.strings = self.actlist
+            else:
+                self.rest = True
+                self.strings = []
+            self.client_informed = True
+
+
+        elif settings:
+            self.fps = int(self.settings['fps'])
+            self.defaultdir = self.settings['default direction']
+            self.joy_type = self.settings['virtual joy type']
+
+        # only perform this operation if vjoy is on and hotkeys are enabled
         if self.vjoy_on == True and self.hks_enabled == True:
             if len(self.hotkeys) > 0:
                 for k in self.hotkeys:
@@ -249,40 +277,28 @@ class Inputter(multiprocessing.Process):
         self.q2.put(info)
         self.q3.put(info)
 
-    def key_listener(self):
+    def vjoy_process(self):
         """This loop runs while client process is alive."""
 
         while self.running:
             if self.playing == True:
-                self.start_delay()
-
+                # self.start_delay()
+                info = {'start over': True, 'action': '[', 'joy': 'vjoy'}
+                self.update_queue(info)
                 for iter, string in enumerate(self.strings):
                     self.parse_action(string, ind=iter)
-                    try:
-                        last_update = time.time()
-                        ts = self.joy.action_interval(self.act_int_t, ignore=self.iai)
-                        time_bw_events = round(ts - last_update, 3)
-                        if time_bw_events >= 0.001:
-                            info = {'start over': False, 'action': 'delay({})'.format(time_bw_events), 'type': 0, 'time': 0, 'joy': 'vjoy'}
-                            self.update_queue(info)
-
-                    except Exception as e:
-                        logging.warning('Fixed Delay Error')
-                        # print("ACTION INTERVAL ERROR: ", e)
-                        #pass
-
-            self.iai = False
-
+                # self.iai = False
+                info = {'start over': False, 'action': ']\n', 'joy': 'vjoy'}
+                self.update_queue(info)
             # check for msg from client every 0.2 seconds
             if self.playing == False:
                 time.sleep(0.1)
                 self.processIncoming()
 
 
-
     def perform_hk(self, notation, string):
         if self.hks_enabled == True:
-            info = {'start over': True, 'action': 'delay(0.0)', 'type': 0, 'time': 0, 'joy': 'vjoy', 'user input': (notation, string)}
+            info = {'start over': True, 'action': '[', 'joy': 'vjoy'}
             self.update_queue(info)
             # give main process time to pause the sequence
             if self.playing == True:
@@ -301,51 +317,75 @@ class Inputter(multiprocessing.Process):
                 #((notation, string))
                 try:
                     iterstring = string[1]
-                except Exception as e:
-                    logging.warning('Iterstring needs to be evaluated')
-                    iterstring = eval(string[1])
-
+                    notation = string[0]
+                except TypeError as e:
+                    try:
+                        iterstring = eval(string[1])
+                    except Exception as e:
+                        self.q3.put({'error': e})
+                        return
                 try:
-
                     for iter, a in enumerate(iterstring):
+                        print("a: ", a)
+                        if self.raw_out:
+                            if a in ['la_r', 'la_dr', 'la_d', 'la_dl', 'la_l', 'la_ul', 'la_u', 'la_ur', 'la_n']:
+                                axis = 'la'
+                                value = (self.settings['analog configs'][a]['x fix'], self.settings['analog configs'][a]['y fix'])
+                                self.q3.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'vjoy'})
+                                continue
+                            elif a in ['ra_r', 'ra_dr', 'ra_d', 'ra_dl', 'ra_l', 'ra_ul', 'ra_u', 'ra_ur', 'ra_n']:
+                                axis = 'ra'
+                                value = (self.settings['analog configs'][a]['x fix'], self.settings['analog configs'][a]['y fix'])
+                                self.q3.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'vjoy'})
+                                continue
+                            elif a in ['a_d','b_d','x_d','y_d','rt_d','lt_d','rb_d','lb_d',
+                                        'dpu_d','dpr_d','dpd_d','dpl_d','start_d','back_d',
+                                        'a_u','b_u','x_u','y_u','rt_u','lt_u','rb_u','lb_u',
+                                        'dpu_u','dpr_u','dpd_u','dpl_u','start_u','back_u']:
 
-                        # print("A: ", a)
+                                for btn, down_up_pair in self.settings['analog configs']['xbox'].items():
+                                    d, u = down_up_pair
+                                    if d == a:
+                                        value = 1
+                                        button = btn
+                                        break
+                                    elif u == a:
+                                        value = 0
+                                        button = btn
+                                        break
+
+                                try:
+                                    self.q3.put({'raw': "[event: {}, value: {}]\n".format(button, value), 'joy': 'vjoy'})
+                                    continue
+                                except Exception as e:
+                                    self.q3.put({'error': "an error ({}) occurred while converting string item ({}) to its raw form.".format(e, a)})
+                                    continue
+
+                        if ind > 0:
+                            info = {'start over': False, 'action': ',', 'type': 0, 'time': 0, 'joy': 'vjoy', 'user input': (notation, string)}
+                            self.update_queue(info)
+
                         combine = False
                         string2 = False
-                        # print("a: ", a)
-                        # begin = time.time()
+
                         self.processIncoming()
-                        # tot = time.time() - begin
-                        # print("processincomingtime: ", tot)
-                        # print("(AUTO) a: {}".format(a))
+
                         if a in list(self.custom_delays):
                             f = self.custom_delays[iterstring]
-                            # print("self.custom_delays[iterstring]: ", f)
+                            print("self.custom_delays[iterstring]: ", f)
                             t = float(f)
-                            # print("iterstring: {}, t: {}".format(iterstring, t))
-                            #print"f = {}; delay for: {}".format(f,t))
-                            #logging.info('delaying for {} s; a = {}, string: {}'.format(t, a, string))
                             ts = self.joy.delay_for(t)
-
-                            # time_bw_events = ts - self.last_update
                             a = 'delay({})'.format(t)
-                            info = {'startover': False, 'action': a, 'type': type, 'time': t, 'joy': 'vjoy'}
+                            info = {'startover': False, 'action': a, 'type': 0, 'time': t, 'joy': 'vjoy'}
                             self.update_queue(info)
-                            # self.last_update = ts
                             return
 
                         elif a in list(self.settings["analog configs"]):
-                            # print("{} settings: {}".format(a, self.settings[a]))
-                            #logging.info('This is an analog action ({})'.format(a))
                             cfg = self.settings["analog configs"][a]
                         elif a == 'j_f':
-                            #logging.info('This is a j_f')
                             cfg = self.fps
-                            # print("fps: ", cfg)
                         elif 'delay' in a:
-                            #logging.info('This is a delay')
                             a, t = a.split("(")
-
                             cfg = "".join(list(t)[0:-1])
                             if cfg in list(self.custom_delays):
                                 cfg = self.custom_delays[cfg]
@@ -353,7 +393,6 @@ class Inputter(multiprocessing.Process):
                                 cfg = float(cfg)
 
                         elif 'combine' in a:
-                            #logging.info('This is a combine')
                             a, cfg = a.split("(")
                             cfg = "".join(list(cfg)[0:-1])
                             acts = cfg.split(",")
@@ -364,7 +403,6 @@ class Inputter(multiprocessing.Process):
                                 bin.append(c)
                             combine = True
                         elif 'string' in a:
-                            #logging.info('This is a string')
                             a, cfg = a.split("(")
                             act = "".join(list(cfg)[0:-1])
                             s = (self.act_cfg[act]["Notation"], self.act_cfg[act]["String"])
@@ -372,22 +410,21 @@ class Inputter(multiprocessing.Process):
                             string2 = True
 
                         else:
-                            #logging.info('This is a button')
                             cfg = None
 
                         if self.rest == False and combine == False and string2 == False:
-                            #logging.info('Sending to joystick: a={}, cfg={}, flipx={}'.format(a, cfg, flipx))
+                            print("exec: ", str(a))
                             ts = getattr(self.joy, str(a))(cfg, flipx=flipx)
+                            print("ts: ", ts)
 
                         elif self.rest == False and combine == True:
-                            #logging.info('Combining {}'.format(bin))
                             ts = self.joy.combine(bin)
 
                         else:
-                            logging.info('Action {} (string: {}) did not get filtered. Rest = {}, combine = {}, string2 = {}'.format(a, string, self.rest, combine, string2))
+                            print('Action {} (string: {}) did not get filtered. Rest = {}, combine = {}, string2 = {}'.format(a, string, self.rest, combine, string2))
 
 
-                        if list(a)[-1] == 'u' or a == 'la_n':
+                        if list(a)[-1] == 'u' or a in ['la_n', 'ra_n']:
                             type = 0
                         else:
                             type = 1
@@ -406,74 +443,106 @@ class Inputter(multiprocessing.Process):
                         if a in list(flips) and flipx == True:
                             a = flips[a]
                         # time_bw_events = ts - self.last_update
-                        info = {'start over': False, 'action': a, 'type': type, 'time': 0.1, 'joy': 'vjoy'}
+                        info = {'start over': False, 'action': "'{}'".format(a), 'type': type, 'time': 0.1, 'joy': 'vjoy'}
                         self.update_queue(info)
                         # self.last_update = ts
-
-
-
-                    if a == 'i_a_i':
-                        self.iai = True
+                    # if a == 'i_a_i':
+                    #     self.iai = True
                 except Exception as e:
-                    logging.warning(e)
+                    self.q3.put({'error': e})
                     #pass
-
             else:
-                logging.info('This is a hotkey action')
-                # self.last_update = time.time()
                 iterstring = string
-                # print("(HK) iterstring: ", iterstring)
-                for a in iterstring:
+                notation = 'None'
+                for k,v in self.act_cfg.items():
+                    if v['String'] == string:
+                        notation = v['Notation']
+                        break
+
+                for iter, a in enumerate(iterstring):
+
+                    if self.raw_out:
+                        if a in ['la_r', 'la_dr', 'la_d', 'la_dl', 'la_l', 'la_ul', 'la_u', 'la_ur', 'la_n']:
+                            axis = 'la'
+                            value = (self.settings['analog configs'][a]['x fix'], self.settings['analog configs'][a]['y fix'])
+                            self.q3.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'vjoy'})
+                            continue
+                        elif a in ['ra_r', 'ra_dr', 'ra_d', 'ra_dl', 'ra_l', 'ra_ul', 'ra_u', 'ra_ur', 'ra_n']:
+                            axis = 'ra'
+                            value = (self.settings['analog configs'][a]['x fix'], self.settings['analog configs'][a]['y fix'])
+                            self.q3.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'vjoy'})
+                            continue
+                        elif a in ['a_d','b_d','x_d','y_d','rt_d','lt_d','rb_d','lb_d',
+                                    'dpu_d','dpr_d','dpd_d','dpl_d','start_d','back_d',
+                                    'a_u','b_u','x_u','y_u','rt_u','lt_u','rb_u','lb_u',
+                                    'dpu_u','dpr_u','dpd_u','dpl_u','start_u','back_u']:
+
+                            for btn, down_up_pair in self.settings['analog configs']['xbox'].items():
+                                d, u = down_up_pair
+                                if d == a:
+                                    value = 1
+                                    button = btn
+                                    break
+                                elif u == a:
+                                    value = 0
+                                    button = btn
+                                    break
+
+                            try:
+                                self.q3.put({'raw': "[event: {}, value: {}]\n".format(button, value), 'joy': 'vjoy'})
+                                continue
+                            except Exception as e:
+                                self.q3.put({'error': "an error ({}) occurred while converting string item ({}) to its raw form.".format(e, a)})
+                                continue
+
+                    if iter > 0:
+                        info = {'start over': False, 'action': ',', 'type': 0, 'time': 0, 'joy': 'vjoy', 'user input': (notation, string)}
+                        self.update_queue(info)
+
                     combine = False
                     string2 = False
-                    # load configs from settings to pass as arg
-                    # print("(HK) a: ", a)
-
 
                     if a in list(self.settings["analog configs"]):
-                        # print("{} settings: {}".format(a, self.settings[a]))
-                        #logging.info('This is an analog action ({})'.format(a))
                         cfg = self.settings["analog configs"][a]
-
 
                     elif a == 'j_f':
                         cfg = self.fps
-                        # a = 'delay({})'.
-                        # print("fps: ", cfg)
                     elif 'delay' in a:
                         a, t = a.split("(")
                         cfg = "".join(list(t)[0:-1])
                         cfg = float(cfg)
 
-                    elif 'combine' in a:
-                        a, cfg = a.split("(")
-                        cfg = "".join(list(cfg)[0:-1])
-                        acts = cfg.split(",")
-                        bin = []
-                        for i in acts:
-                            i = i.replace(" ", "")
-                            c = (i, flipx)
-                            bin.append(c)
-                        combine = True
-                    elif 'string' in a:
-                        a, cfg = a.split("(")
-                        act = "".join(list(cfg)[0:-1])
-                        s = (self.act_cfg[act]["Notation"], self.act_cfg[act]["String"])
-                        self.parse_action(s, hk=hk)
-                        string2 = True
+
+                    # deprecated till future version
+                    # elif 'combine' in a:
+                    #     a, cfg = a.split("(")
+                    #     cfg = "".join(list(cfg)[0:-1])
+                    #     acts = cfg.split(",")
+                    #     bin = []
+                    #     for i in acts:
+                    #         i = i.replace(" ", "")
+                    #         c = (i, flipx)
+                    #         bin.append(c)
+                    #     combine = True
+                    # elif 'string' in a:
+                    #     a, cfg = a.split("(")
+                    #     act = "".join(list(cfg)[0:-1])
+                    #     s = (self.act_cfg[act]["Notation"], self.act_cfg[act]["String"])
+                    #     self.parse_action(s, hk=hk)
+                    #     string2 = True
 
                     else:
                         cfg = None
                     # execute the action
-                    if combine == False and string2 == False:
+                    # if combine == False and string2 == False:
                         # timestamp
-                        ts = getattr(self.joy, str(a))(cfg, flipx=flipx)
-                    elif combine == True:
-                        # timestamp
-                        ts = self.joy.combine(bin)
+                    ts = getattr(self.joy, str(a))(cfg, flipx=flipx)
+                    # elif combine == True:
+                    #     # timestamp
+                    #     ts = self.joy.combine(bin)
 
                     # inform main process
-                    if list(a)[-1] == 'u' or a == 'la_n':
+                    if list(a)[-1] == 'u' or a in ['la_n','neutral','ra_n']:
                         type = 0
                     else:
                         type = 1
@@ -493,52 +562,50 @@ class Inputter(multiprocessing.Process):
                     if a in list(flips) and flipx == True:
                         a = flips[a]
 
-
-
-                    info = {'start over': False, 'action': a, 'type': type, 'time': 0.1, 'joy': 'vjoy'}
+                    a = "'{}'".format(a)
+                    info = {'start over': False, 'action': a, 'joy': 'vjoy'}
                     self.update_queue(info)
                     # self.last_update = ts
-                if a == 'i_a_i':
-                    self.iai = True
+                info = {'start over': False, 'action': ']\n', 'joy': 'vjoy', 'user input': (notation, string)}
+                self.update_queue(info)
 
+                # deprecated
+                # if a == 'i_a_i':
+                #     self.iai = True
 
-    def start_delay(self):
-        # inform client process that action is starting from beginning
-        # 'start over' will start next line in out feed.
-        info = {'start over': True, 'action': 'delay(0.0)', 'type': 0, 'time': 0, 'joy': 'vjoy'}
-        self.update_queue(info)
-
-        self.processIncoming()
-        whol = int(self.start_delay_t)
-
-        xtra = float(self.start_delay_t) - whol
-        #print("whol: {}, xtra: {}".format(whol, xtra))
-        #print"xtra: ", xtra)
-        for i in range(whol):
-            # print("processIncoming")
-            self.processIncoming()
-            if self.playing == False:
-                return
-            time.sleep(0.5)
-
-            self.processIncoming()
-            if self.playing == False:
-                return
-            time.sleep(0.5)
-
-        time.sleep(xtra)
-
+    # deprecated
+    # def start_delay(self):
+    #     # inform client process that action is starting from beginning
+    #     # 'start over' will start next line in out feed.
+    #     begin = time.time()
+    #     end = begin
+    #
+    #     info = {'start over': True, 'action': '[', 'type': 0, 'time': 0, 'joy': 'vjoy'}
+    #     self.update_queue(info)
+    #
+    #     self.processIncoming()
+    #
+    #     t = float(self.start_delay_t)
+    #
+    #     i = 0
+    #     while (end - begin) <= t:
+    #         if i % 1000 == 0:
+    #             self.processIncoming()
+    #             if not self.playing:
+    #                 break
+    #
+    #         time.sleep(0.001)
+    #         end = time.time()
+    #
+    #     print("START DELAY = {}; st took: {} sec".format(self.start_delay_t, str(end - begin)))
 
 
     def toggle_play(self):
-        # play/pause
-        #logging.info('Toggle Play')
         if self.hks_enabled == True:
             if self.playing == True and self.client_informed == True:
                 self.client_informed = False
                 self.joy.neutral('bla')
                 self.rest = True
-                #print"toggle_play: self.playing = false")
                 info = {'playing': False}
                 self.update_queue(info)
 
