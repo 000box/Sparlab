@@ -11,7 +11,7 @@ Hotkey Listener to allow users to stay focused inside their game windows.
 Adjustable Delay Variables for simulating delay b/w inputs. 
 And more.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 Developers
 
@@ -51,7 +51,7 @@ In powershell inside the __main__ directory, enter 'python .\setup.py build' to 
 Distributable:
 In powershell inside the __main__ directory, enter 'python .\setup.py bdist_msi' to the command line. 
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 What other information would you like to see included in this README? 
 What questions do you have about Sparlab or The Umensch Company in general? 
