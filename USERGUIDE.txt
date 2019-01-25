@@ -18,19 +18,15 @@ Action Editor:
 -Home for all of your Actions.
 -Each action can have a notation, hotkey, and string.
 
-In Feed:
--converts notation scripts to its matching string of functions when you press Play.
+Script:
+-converts notation to its matching string of functions when you press Play.
 
-Out Feed: record and log your outputs.
+Log: record and log your outputs.
 -Output from both devices is displayed in real-time.
 -You can also save the output to a log file.
 
 
 Installation:
-
-Press the Green Download button at the top of the webpage.
-Once it is downloaded, refer to the documentation.txt file in the source code.
-
 
 
 1) Go inside driver folder and look for 5 files: 'devcon', 'scpvbus', 'ScpVBus', 'ScpVBus.sys', and 'WdfCoinstaller01009.dll'.
@@ -38,9 +34,9 @@ Once it is downloaded, refer to the documentation.txt file in the source code.
 
 2) In your Windows Search Bar at the bottom of your screen, type in 'cmd' and right click on 'Command Prompt', select 'Run as Administrator', press 'Yes'
 
-3) In the command prompt window, type in 'cd' (not including the quotations), press SPACEBAR, paste the address text, then press ENTER. (example: cd C:\Users\John Ward\Desktop\Sparlab\driver)
+3) In the command prompt window, type in 'cd' (not including the quotations), press SPACEBAR, paste the address text, then press ENTER. (cd C:\Users\YOUR NAME\Desktop\Sparlab\driver)
 
-4) To install a driver: type 'devcon.exe install ScpVBus.inf Root\ScpVBus' and press ENTER
+4) To install the driver: type 'devcon.exe install ScpVBus.inf Root\ScpVBus' and press ENTER
 	- Your command prompt should output something like this: 'Device node created. Install is complete when drivers are installed...' and 'Drivers installed successfully.'
    To uninstall: type 'devcon.exe remove Root\ScpVBus' and press ENTER.
 	- Your command prompt should say something along the lines of '1 device(s) were removed.'
@@ -63,16 +59,16 @@ Your keyboard is the default PJoy Device when you launch Sparlab for the first t
 
 If you want to switch to an XBOX joystick, follow these steps:
 
-1) Make sure your XBOX device is plugged into a USB port on your PC, then verify that its listing in your Device Report. ('Tools/Device Report' in your top command bar)
+1) Make sure your XBOX device is plugged into a USB port on your PC.
 2) In Settings (inside 'Edit' menu), change 'physical joy type' to 'xbox', press 'Commit'.
-3) After committing any changes, try using your joystick and check the 'Out' feed for output.
-4) You can go into Settings and scroll down to 'PJoy Button Map' to realign buttons. (See 'PJoy Button Map' below for more details)
+3) After committing any changes, try using your joystick and check the Log for output.
+4) You can go into Settings and scroll down to 'button configs' to realign buttons. (See 'button configs' below for more details)
 
 If you want to switch to an Arcade Stick, follow these steps:
 
 1) Make sure your Arcade Stick is plugged into a USB port on your PC, then verify its listing in your Device Report.
 2) If it is listed, scroll down to see the 'Input Caps', make sure it has the usages 'Hat switch' and 'Button'. If so, keep the Report open and go to Settings, scroll down to 'arcade stick'
-    under 'PJoy Button Map' and change the values of 'vendor id', 'hat switch' and 'buttons' to the corresponding values listed in your report, you can change the values of the
+    under 'button configs' and change the values of 'vendor id', 'hat switch' and 'buttons' to the corresponding values listed in your report, you can change the values of the
 3) In Settings, change 'physical joy type' to 'arcade stick', press 'Commit', then restart the app.
 4) After reopening the app, test the buttons on your device and look for output in your 'Out' feed. The 'View Raw Output' button will tell you the value of
     each button and whether it is pressed or released, you can use this information to re-align any buttons inside of 'hat switch' and/or 'buttons'.
@@ -101,13 +97,14 @@ Below are descriptions for each settings:
 'virtual joy type: This setting must be equal to 'xbox' for now.
 
 'analog configs: 'x fix' & 'y fix' are the configs used by your vjoy. 'x min','x max','y min', & 'y max' are used by your pjoy in order to categorize its analog states.
-'PJoy Button Map: Mapping of buttons to ('press function', 'release function'). Arcade Stick Only: Must have valid vendor ID. All buttons have a valid page ID, each button must have a valid usage ID. \
+'button configs: Mapping of buttons to ('press function', 'release function'). Arcade Stick Only: Must have valid vendor ID. All buttons have a valid page ID, each button must have a valid usage ID. \
 Hat switch must have one valid usage id. You can find this information by viewing your Device Report (In tools) ,
 
 Action Editor:
 
-
-This is where the app pulls from when you use hotkeys or play notation scripts. Each tab in the editor represents a file you have listed in your 'Action Files' in Settings.
+-filename: name of the text file inside your Appdata folder
+-include: can be True or False. Setting this to True gives you the ability to use the action config's defined notations.
+-action config: This is where the app pulls from when you use hotkeys or play notation scripts. Each tab in the editor represents a file you have listed in your 'Action Files' in Settings.
 
 Each action has its own Name (e.g. 'double dash'), Notation (e.g. 'dd'), Hotkey (e.g. 'd+-'), and string (e.g. ['la_r', 'delay(0.015)', 'la_n', 'delay(0.015)', 'la_r', 'delay(0.015)', 'la_n'])
 
@@ -115,8 +112,6 @@ Examples of correctly formatted actions:
 
 'right punch:			{'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.020)', 'y_u']},
 'start:			{'Notation': 'None', 'Hotkey': '`', 'String': ['start_d', 'delay(0.020)', 'start_u']}
-
-See how 'right punch' has a 'None' hotkey and 'start' has 'None' notation? That's because there are actions that can be used as hotkeys ('start') and actions that are used mainly as script builders.
 
 
 Functions for building strings:
@@ -172,38 +167,28 @@ start_d : start button press
 back_u : back button release
 back_d : back button press
 
-
-Other Functions:
-
-'j_f': Hold for one frame: Hold for FPS (['a_d','j_f','a_u'] with FPS of 60 is equivalent to ['a_d','delay(0.060)','a_u'])
 'delay(t)': Hold for t seconds ('delay(1.123)' means delay for 1.123 seconds)
-'combine(functions)': Combine actions ('combine(a_d,b_d)' means press A and B)
-'string(action)': The string of 'action'. This function allows you to perform strings inside of strings.
 
 
 Hotkeys:
 
 These are useful for testing your newly created Actions or if you need to navigate around a menu with your VJoy.
 
-Hotkeys must be surrounded by quotations. (e.g 'h+k', "space", 'u')
-
-Each key for your hotkey must be separated by a '+' if you want to apply multiple keys. (e.g. 'space+u', 'shift+/+.')
-
-If you want to use '\' as a hotkey, it has to be listed like this: '\\'
-
-If you want to use a single quotation, it has to be listed like this: "'" (cannot be ''')
-
+Syntax Rules:
+-Hotkeys must be surrounded by quotations. (e.g 'h+k', "space", 'u')
+-Each key for your hotkey must be separated by a '+' if you want to apply multiple keys. (e.g. 'space+u', 'shift+/+.')
+-If you want to use '\' as a hotkey, it has to be listed like this: '\\'
+-If you want to use a single quotation, it has to be listed like this: "'" (cannot be ''')
 
 
 Notation:
 
 A notation is a variable representing an Action you want to be played in your script, which means that the Action being represented MUST have a valid String attached with it.
 
-In Action Editor, Notations must be surrounded by quotations (e.g 'd/f', "u/r", '1')
+Syntax Rules: In Action Editor, Notations must be surrounded by quotations (e.g 'd/f', "u/r", '1')
 
 
-Creating your Notation Script:
-
+Creating a Script:
 
 Follow these guidelines for successful conversion of notations:
 -  Everything must be separated with a SPACE
@@ -221,41 +206,41 @@ These are for inserting into your script or strings in your Action Editor to sim
 
 -Example:
 
-	dv1 = 0.015
+	-dv1 = 0.015
+	-A notation script of [ 1 dv1 2 ] would be equal to a string of [ *1's String* *delay(0.015)* *2's String* ]
+	-A string that looks like ['a_d','delay(dv1)','a_u'] would be equal to a string of ['a_d','delay(0.015)','a_u']
 
-	A notation script of [ 1 dv1 2 ] would be equal to a string of [ *1's String* *delay(0.015)* *2's String* ]
+How to use Auto Adjustment
 
-	A string that looks like ['a_d','delay(dv1)','a_u'] would be equal to a string of ['a_d','delay(0.015)','a_u']
+This feature changes a delay variable FOR YOU while your script is playing.
+
+Var.: Variable to adjust during Script Play
+Val.: amount of adjustment
+Freq.: adjust every N script play throughs
 
 
 In-app commands:
 
-
-Start Log: writes your outputs to a .csv file in your 'logs' folder (YOURNAME/APPDATA/Roaming/Sparlab/version#/logs).
-Clear: removes all text in your 'Out' feed.
-View PJoy Raw: converts your PJoy's future string output in your 'Out' feed to its raw format.
-Disable Out: Disables the 'Out' Feed.
-Start Delay: the delay time before your script starts running from the beginning.
-Fixed Delay: the delay time between every notation in your script.
+Clear: removes all text in your Log.
+View Raw: converts new string output to its raw format.
+Disable Log: Disables output display in log.
 Delay Variables: these can be inserted into your script to simulate delay (in seconds).
 Enable HKs: turns on the hotkeys you have defined in your Action Editor.
 Flip X Axis: switches the directions of all functions that have an X Direction (e.g. 'dpr_d' --> 'dpl_d', 'la_dl' --> 'la_dr').
 Turn VJoy On: plugs in your VJoy Device.
 Refresh: re-commits your settings. This is useful if you are changing devices.
-
+Save Log: saves all the
 
 
 Troubleshooting:
 
-
 Error: '_ is not a valid device type. Change your pjoy type in Settings':
-
 -Your PJoy has to be one of the following: 'xbox', 'arcade stick', 'keyboard', or 'None'. Go into your Settings, change it to one of those, press 'commit'.
 
 Error: "Key '___' is not mapped to any known key.", ValueError(...':
 
 -This error will occur if you are using an invalid key on your keyboard when your keyboard is the assigned physical joy type. The key that is giving you the error is likely not on your keyboard. Go
-back into Settings, scroll down to 'PJoy Button Map/', scroll to 'keyboard' underneath it, change the key to a valid key, press Commit. You may have to reset the app to get the key to work.
+back into Settings, scroll down to 'button configs/', scroll to 'keyboard' underneath it, change the key to a valid key, press Commit. You may have to reset the app to get the key to work.
 
 Error/Warning: 'invalid syntax(<string>, x...':
 
@@ -275,15 +260,16 @@ Error: 'No input report found for page ID "_" (vendor= "_",....'
 -This occurs if you have an invalid page ID listed inside your PJoy configurations when using an Arcade Stick. Refer to the Arcade Stick instructions in 'Physical Joystick Configuration' above.
 
 
+VJoy is not working when turned on: this can occur when there is an update to your OS, which alters the state of the virtual driver. Try uninstalling the driver and re-installing it. If that
+doesn't work, you may have to reset your PC and try it.
 
+My XBOX controller input is not being detected, and I have 'xbox' set as the 'physical joystick type': Restart the app.
 
-
-
-Blank Action Editor/Settings File: you likely had a typo and need to fix it inside your APPDATA Files.
+Blank Action Editor/Settings File: you might have a typo in one of the text files and need to fix it inside your APPDATA Files.
 	In your file explorer, go to YOURNAME/AppData/Roaming/Sparlab/*version#*, open up the file that is blank in the app, correct the typo, save the file, and restart the app.
 
 App not loading: you may need to clear your app's memory. To do that, go to YOURNAME/AppData/Roaming/Sparlab, copy (backup) the Sparlab folder to a non-AppData location such as your desktop,
-delete the Sparlab folder inside of YOURNAME/AppData/Roaming/, and relaunch the app. If that doesn't work, try restarting your computer. If that doesn't solve the problem, go to www.sparlab.org and install the newest version.
+delete the Sparlab folder inside of YOURNAME/AppData/Roaming/, and relaunch the app. If that doesn't work, try restarting your computer. If that doesn't solve the problem, go to www.umensch.com/downloads and install the newest version.
 If it is still not loading, post the issue to the Sparlab community (https://www.reddit.com/r/Sparlab/) or the project repository (https://github.com/johnward-umensch/Sparlab), you can also try downloading the newest release
 from the releases tab in the github repository.
 

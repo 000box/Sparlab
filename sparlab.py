@@ -2,7 +2,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import os
 import time
-import updater
+
+try:
+    import updater
+except:
+    pass
+
 import _input
 import _output
 from multiprocessing import Queue, freeze_support
@@ -11,6 +16,7 @@ from collections import ChainMap
 import tools
 import sys
 from datetime import datetime
+import hook.hid as hid
 
 __version__ = '1.0.5'
 
@@ -44,7 +50,7 @@ ICON = "sparlab_logo.ico"
 class App(tk.Tk):
 
     def refresh(self):
-        """ After user presses play or Refresh, this function will be called"""
+        """ After user presses play, makes changes in Settings or Action Editor, or presses Refresh button, this function will be called"""
         # settings
         with open(DATAPATH + "\\" + "settings.txt", "r") as f:
             # string to python dict
@@ -95,12 +101,13 @@ class App(tk.Tk):
             self.fps = int(self.settings['fps'])
             self.port = int(self.settings["virtual joy port"])
             self.default_dir = self.settings['default direction']
+            self.digits = self.settings['delay variable # of decimals']
             # self.log_type = self.settings['log type']
         except TypeError as e:
             messagebox.showerror(title="Error", message=e)
 
         dt = {k:float(v.get()) for k,v in self.delay_tuners.items()}
-        info = {'settings': self.settings, 'actcfg': self.act_cfg, 'delay vars': dt, 'hks enabled': self.hotkeys_enabled}
+        info = {'settings': self.settings, 'actcfg': self.act_cfg, 'delay vars': dt} #, 'hks enabled': self.hotkeys_enabled}
         self.q1.put(info)
         self.q4.put(info)
 
@@ -185,14 +192,15 @@ class App(tk.Tk):
                 self.q3.put({"warning": 'action file with path {} was not able to be imported ({})'.format(path, e)})
 
         self.act_cfg = dict(ChainMap(*imports))
-
-
         self.playing = False
-        self.hks_on = False
+        # self.hks_on = False
         self.raw_out = False
         self.joy_is_on = False
-        self.hotkeys_enabled = False
+        # self.hotkeys_enabled = False
         self.out_disabled = False
+        self.aa_enabled = False
+        self.rep = 0
+        self.digits = self.settings['delay variable # of decimals']
 
         try:
             self.vjoy_type = self.settings['virtual joy type']
@@ -217,22 +225,34 @@ class App(tk.Tk):
             with open(DATAPATH + "\\" + "lastsession.txt", "r") as f:
                 ls = eval(f.read())
                 self.delay_tuners = {i: tk.StringVar(value=ls['delay_vars'][i]) for i in self.settings['Delay Variables']}
+                self.aavar = tk.StringVar(value=str(ls['auto adjustment']['variable']))
+                self.aaval = tk.StringVar(value=str(ls['auto adjustment']['value']))
+                self.aafreq = tk.StringVar(value=str(ls['auto adjustment']['frequency']))
+
                 self.open_file(lastsess=ls)
                 f.close()
         except FileNotFoundError:
-
             try:
                 self.delay_tuners = {i:tk.StringVar(value=0.0) for i in eval(self.settings['Delay Variables'])}
             except:
                 self.delay_tuners = {i:tk.StringVar(value=0.0) for i in self.settings['Delay Variables']}
 
+            self.aaval = tk.StringVar()
+            self.aafreq = tk.StringVar(value=1)
+            self.aavar = tk.StringVar(value=list(self.delay_tuners.items())[0][0])
+
             self.add_tab()
+
         except Exception as e:
             print("error ({}) when attempting to load lastsession.txt".format(e))
             try:
                 self.delay_tuners = {i:tk.StringVar(value=0.0) for i in eval(self.settings['Delay Variables'])}
             except:
                 self.delay_tuners = {i:tk.StringVar(value=0.0) for i in self.settings['Delay Variables']}
+
+            self.aaval = tk.StringVar()
+            self.aafreq = tk.StringVar(value=1)
+            self.aavar = tk.StringVar(value=list(self.delay_tuners.items())[0][1])
 
             self.add_tab()
 
@@ -284,11 +304,11 @@ class App(tk.Tk):
                         msg = "{}: {}".format(type(e).__name__, e.args)
                         #print(msg)
 
-                    try:
-                        hk_act = info['hk action']
-                        #print("hotkey: ", hk_act)
-                    except Exception as e:
-                        pass
+                    # try:
+                    #     hk_act = info['hk action']
+                    #     #print("hotkey: ", hk_act)
+                    # except Exception as e:
+                    #     pass
 
                     try:
                         e = info['error']
@@ -333,43 +353,60 @@ class App(tk.Tk):
                         startover = info['start over']
                     except KeyError as e:
                         pass
+                        # print("355 e: ", e)
                     except Exception as e:
-                        print("258: ", e)
+                        pass
+                        # print("258: ", e)
                     try:
+
+
+                        if startover:
+                            if self.playing:
+                                self.rep += 1
+                            char0 = "{}.0".format(int(float(outtb.index(tk.INSERT))))
+                            outtb.see(char0)
+                            if self.rep % int(self.aafreq.get()) == 0 and self.playing and joy == 'vjoy':
+                                self.make_auto_adjustment()
+                            # elif self.playing:
+                            #     pass
+                                # print("no adjustment")
+
                         if not self.out_disabled:
-
-                            if startover:
-                                char0 = "{}.0".format(int(float(outtb.index(tk.INSERT))))
-                                outtb.see(char0)
-
                             outtb.insert(tk.INSERT, a, tag_name)
-                            outtb.see(tk.END)
+
+                        outtb.see(tk.END)
 
                     except KeyError as e:
                         pass
+                        # print("377 error: ", e)
                     except UnboundLocalError as e:
                         pass
+                        # print("379 e: ", e)
                         # print("ULE ERROR: ", e)
                     except TypeError as e:
                         pass
+                        # print("382 e: ", e)
                     except Exception as e:
-                        print("OTHER ERROR: ", e)
+                        pass
+                        # print("OTHER ERROR: ", e)
                         messagebox.showerror(title='Error', message=e)
 
                     try:
                         w = info['warning']
                         messagebox.showerror(title='Warning', message=w)
-                    except KeyError:
+                    except KeyError as e:
                         pass
+                        # print("382 e: ", e)
                     except Exception as e:
                         messagebox.showerror(title='Error', message=e)
 
                     try:
                         e = info['error']
-                        print("ERROR: ", e)
+                        # print("ERROR: ", e)
                         messagebox.showerror(title='Error', message=e)
-                    except KeyError:
+                    except KeyError as e:
                         pass
+                        # print("382 e: ", e)
                     except Exception as e:
                         messagebox.showerror(title='Error', message=e)
 
@@ -396,7 +433,7 @@ class App(tk.Tk):
 
             except Exception as e:
                 msg = "Q3 ERROR: {}: {}".format(type(e).__name__, e.args)
-                print(msg)
+                # print(msg)
 
         self.after(200, self.processIncoming3)
 
@@ -420,7 +457,7 @@ class App(tk.Tk):
             lb = box.search("[", "1.0", tk.END)
             if not lb:
                 return
-            rb = box.search("] ", "1.0", tk.END)
+            rb = box.search("] ", "1.0", "2.0")
             if not rb:
                 return
             box.tag_add(tag_name, lb, rb)
@@ -531,7 +568,7 @@ class App(tk.Tk):
                         'Edit': (editmenu, [('Settings', self.settings_editor, None), ("Action Editor", self.action_editor, None)]),
                         'Tools': (toolmenu, [('Device Report', self.view_device_report, None),('Toggle VJoy', self.toggle_controller, None),
                         ('Toggle X Axis ', self.toggle_xaxis, None), ('Enable/Disable Log', self.toggle_output, None),   #('Play', self.play, None),
-                        ('Toggle Hotkeys', self.toggle_hotkeys, None), ('Log String/Raw', self.toggle_output_view, None)]),
+                        ('Log String/Raw', self.toggle_output_view, None)]), #('Toggle Hotkeys', self.toggle_hotkeys, None),
                         'Help': (helpmenu, [('User Guide', self.view_user_guide, None), ('License', self.view_license, None), ('Anti-Cheat Policy', self.view_anticheatpolicy, None),
                          ('Community', self.view_community, None), ('Check for Update', self.check_for_update, None)])}
 
@@ -566,6 +603,7 @@ class App(tk.Tk):
         name = self.last_update['name']
         text = self.last_update['text']
         source = self.last_update['source']
+
 
 
         # if vars != None:
@@ -603,12 +641,12 @@ class App(tk.Tk):
         # self.dirstatuslab.pack(side='left', anchor="ne", padx=15)
         self.xa_sb.pack(side='right', anchor='ne', padx=5)
 
-        s = "Enable HKs" if self.hotkeys_enabled == False else "Disable HKs"
-        # self.hkstatuslab = tk.Label(btnframe, text='HKs')
-        # self.hk_sb = tk.Checkbutton(btnframe, onvalue=1, offvalue=0, textvariable=self.hkvar, command=lambda: self.toggle_hotkeys())
-        self.hk_sb = ttk.Button(btnframe, text=s, command=lambda: self.toggle_hotkeys(), width=12)
-        # self.hkstatuslab.pack(side='left', anchor="ne", padx=15)
-        self.hk_sb.pack(side='right', anchor='ne', padx=5)
+        # s = "Enable HKs" if self.hotkeys_enabled == False else "Disable HKs"
+        # # self.hkstatuslab = tk.Label(btnframe, text='HKs')
+        # # self.hk_sb = tk.Checkbutton(btnframe, onvalue=1, offvalue=0, textvariable=self.hkvar, command=lambda: self.toggle_hotkeys())
+        # self.hk_sb = ttk.Button(btnframe, text=s, command=lambda: self.toggle_hotkeys(), width=12)
+        # # self.hkstatuslab.pack(side='left', anchor="ne", padx=15)
+        # self.hk_sb.pack(side='right', anchor='ne', padx=5)
 
         savelogbtn = ttk.Button(btnframe, text='Save Script', width=12, command=lambda: self.save_as())
         savelogbtn.pack(side='right', anchor='ne', padx=5)
@@ -637,21 +675,49 @@ class App(tk.Tk):
         # delay tuner frame
         self.delaytunerframe = tk.Frame(tab)
         self.delaytunerframe.pack(side='top', fill='x', anchor='n')
-
+        self.binds = []
         l = tk.Label(self.delaytunerframe, text='Delay Variables:', font='Verdana 10')
         l.pack(side='left', anchor='n', padx=5, pady=5)
-
+        dvd = int(self.digits)
         for iter, (notation, var) in enumerate(self.delay_tuners.items()):
             if notation not in ['fps', 'Fixed Delay', 'Start Delay']:
                 l = tk.Label(self.delaytunerframe, text=notation, width=2, font='Verdana 10')
                 l.pack(side='left', padx=5, anchor='n', pady=5)
-
-                sb = tk.Spinbox(self.delaytunerframe, to=100.00, from_=0.00, textvariable=var, increment=0.001, width=6, command=lambda: self.tune_var())
-                sb.bind('<Key>',self.tune_var)
+                sb = tk.Spinbox(self.delaytunerframe, to=100.00, from_=0.00, textvariable=var, increment=float("0."+"".join(["0" for i in range(dvd-1)]) + "1"), width=dvd + 3, command=lambda: self.tune_var())
+                bind = sb.bind('<Key>',self.tune_var)
+                self.binds.append((sb, bind))
                 sb.pack(side='left', padx=5, anchor='n', pady=5)
+            if iter == 0:
+                default_aavarname = notation
 
-        delframe = tk.Frame(tab)
-        delframe.pack(side='top', fill='x', anchor='n')
+
+        aalabframe = tk.Frame(tab)
+        aalabframe.pack(side='top', fill='x', anchor='n', padx=60)
+        tk.Label(aalabframe, text="Var.").pack(side='left', padx=40)
+        tk.Label(aalabframe, text="Val.").pack(side='left', padx=20)
+        tk.Label(aalabframe, text="Freq.").pack(side='left', padx=10)
+
+        self.aaframe = tk.Frame(tab, borderwidth=2)
+        self.aaframe.pack(side='top', fill='x', anchor='n')
+
+        state = 'normal' if self.aa_enabled == True else 'disabled'
+        enabbtn_name = 'Enable AA' if not self.aa_enabled else 'Disable AA'
+        # tk.Label(self.aaframe, text='Auto Adjust:', font='Verdana 10').pack(side='left', padx=5)
+        self.enable_aa_btn = ttk.Button(self.aaframe, text=enabbtn_name, width=12, command=lambda: self.toggle_aa(), state='normal')
+        self.enable_aa_btn.pack(side='left', padx=5)
+
+
+        self.auto_adjbox = ttk.Combobox(self.aaframe, width=8, values=[var for var in list(self.delay_tuners)], textvariable=self.aavar, state=state)
+        self.auto_adjbox.pack(side='left', padx=5)
+        self.auto_adjbox.set(default_aavarname)
+
+        self.aavalsb = tk.Spinbox(self.aaframe, to=0.1, from_=-0.1, textvariable=self.aaval, increment=float("0."+"".join(["0" for i in range(dvd-1)]) + "1"), width=int(self.digits) + 3, state=state)
+        self.aavalsb.pack(side='left', padx=5)
+        self.aafreqsb = tk.Spinbox(self.aaframe, to=1000, from_=0, textvariable=self.aafreq, increment=1, width=int(self.digits) + 3, state=state)
+        self.aafreqsb.pack(side='left', padx=5)
+
+        # delframe = tk.Frame(tab)
+        # delframe.pack(side='top', fill='x', anchor='n')
 
         # self.sdtuner = tk.Spinbox(delframe, to=100.00, from_=0.00, textvariable=self.sdvar, increment=0.001, width=6, command=lambda: self.tune_var())
         # self.sdtuner.bind('<Key>',self.tune_var)
@@ -725,6 +791,17 @@ class App(tk.Tk):
         outtb.pack(fill='both',expand=1, anchor='nw', side='top')
         self.last_update['outtextbox'] = outtb
 
+    # run this function every rep
+    def make_auto_adjustment(self):
+        var = self.aavar.get()
+        aval = self.aaval.get()
+
+        current_val = self.delay_tuners[var].get()
+
+        if self.aa_enabled:
+            self.delay_tuners[var].set(str(round(float(current_val) + float(aval), self.digits)))
+
+            self.tune_var()
 
     def delete_outtxt(self):
         outbox = self.last_update['outtextbox']
@@ -736,9 +813,11 @@ class App(tk.Tk):
 # dt = {k:float(v.get()) for k,v in self.delay_tuners.items()}
 #self.delay_tuners = {k:float(v.get()) for k,v in self.delay_tuners.items()}
     def tune_var(self, event=None):
-        time.sleep(0.02)
-        dt = {k:float(v.get()) for k,v in self.delay_tuners.items()}
-        print("tune var! dt: ", dt)
+        try:
+            dt = {k:float(v.get()) for k,v in self.delay_tuners.items()}
+        except:
+            pass
+        # print("tune var! dt: ", dt)
         self.q1.put({'delay vars': dt})
 
     def track_change_to_text(event):
@@ -747,14 +826,10 @@ class App(tk.Tk):
 
 
     def new_file(self, name=None, source=None, text=None):
-        # very likely don't need this
-        # try:
-        #     tkvars = {
-        #     'aivar': self.aivar.get()}
-        #                 # 'sdvar': self.sdvar.get()} #, 'navar': self.navar.get()
-        #     self.note.forget(self.note.select())
-        # except:
-        #     tkvars = None
+        try:
+            self.note.forget(self.note.select())
+        except:
+            pass
 
         tab = tk.Frame(self.note)
         self.last_update = {'text': text, 'name': name, 'source': source, 'tab': tab}
@@ -807,7 +882,7 @@ class App(tk.Tk):
 
     def toggle_controller(self):
         if self.joy_is_on == True:
-            self.hks_on = False
+            # self.hks_on = False
             self.initButton.config(state='disabled')
             self.joy_is_on = False
             s = "On"
@@ -842,17 +917,45 @@ class App(tk.Tk):
         self.q4.put(info)
 
 
-    def toggle_hotkeys(self):
-        if self.hotkeys_enabled == True:
-            self.hotkeys_enabled = False
-            self.hk_sb.config(text='Enable HKs')
-        else:
-            self.hotkeys_enabled = True
-            self.hk_sb.config(text='Disable HKs')
+    # def toggle_hotkeys(self):
+    #     if self.hotkeys_enabled == True:
+    #         self.hotkeys_enabled = False
+    #         # self.hk_sb.config(text='Enable HKs')
+    #
+    #         for w, b in self.binds:
+    #             try:
+    #                 w.bind("<Key", self.tune_var)
+    #             except Exception as e:
+    #                 print("binding error when disabling widget: {} ({})".format(w, e))
+    #
+    #     else:
+    #         self.hotkeys_enabled = True
+    #         # self.hk_sb.config(text='Disable HKs')
+    #
+    #         for w, b in self.binds:
+    #             try:
+    #                 w.unbind("<Key>")
+    #             except Exception as e:
+    #                 print("unbind error when unbinding {}: {}".format(w, e))
+    #
+    #     info = {'hks enabled': self.hotkeys_enabled}
+    #     self.q1.put(info)
+    #     self.q4.put(info)
 
-        info = {'hks enabled': self.hotkeys_enabled}
-        self.q1.put(info)
-        self.q4.put(info)
+
+    def toggle_aa(self):
+        if self.aa_enabled == True:
+            self.aa_enabled = False
+            self.enable_aa_btn.config(text="Enable AA")
+            self.aavalsb.config(state='disabled')
+            self.auto_adjbox.config(state='disabled')
+            self.aafreqsb.config(state='disabled')
+        else:
+            self.aa_enabled = True
+            self.enable_aa_btn.config(text="Disable AA")
+            self.aavalsb.config(state='normal')
+            self.auto_adjbox.config(state='normal')
+            self.aafreqsb.config(state='normal')
 
     # for user to configure joystick
     def toggle_output_view(self):
@@ -906,7 +1009,7 @@ class App(tk.Tk):
                 for ind, _d in enumerate(list(self.delay_tuners)):
                     #print"ind: {}; _d: {}".format(ind, _d))
                     if i == _d:
-                        actlist.append((_d, ["delay({})".format(self.delay_tuners[_d].get())]))
+                        actlist.append((_d, ["delay({})".format(_d)]))
 
 
                 for k,v in self.act_cfg.items():
@@ -931,7 +1034,7 @@ class App(tk.Tk):
             dt = {k:float(v.get()) for k,v in self.delay_tuners.items()}
             # print("DT: ", dt)
 
-            info = {'playing': True, 'settings': self.settings, 'actlist': actlist,'actcfg': self.act_cfg, 'facing': self.dir, 'delay vars': dt, 'hks enabled': self.hotkeys_enabled}
+            info = {'playing': True, 'settings': self.settings, 'actlist': actlist,'actcfg': self.act_cfg, 'facing': self.dir, 'delay vars': dt} #, 'hks enabled': self.hotkeys_enabled}
             # print("preplay INFO: ", info)
             # print("PLAYING: ", actlist)
             if len(actlist) == 0:
@@ -940,6 +1043,8 @@ class App(tk.Tk):
                 return
 
             self.highlight_script()
+
+            self.rep = 0
 
             self.q1.put(info)
 
@@ -1014,7 +1119,7 @@ class App(tk.Tk):
             else:
                 newactlist.append(act)
 
-        print("vjoy's actlist for logging: ", newactlist)
+        # print("vjoy's actlist for logging: ", newactlist)
         return newactlist
 
 
@@ -1023,6 +1128,13 @@ class App(tk.Tk):
         ref = tools.PopupDoc(self, dicts)
 
     def view_device_report(self):
+        with open(HID_REPORT, "w") as f:
+            try:
+                hid.core.show_hids(output = f)
+            except Exception as e:
+                print("HID Error: ", e)
+            f.close()
+
         with open(HID_REPORT, "r") as hidr:
             self.hid_report = str(hidr.read())
             hidr.close()
@@ -1031,7 +1143,7 @@ class App(tk.Tk):
 
         report = tools.DeviceReport(self, info)
 
-    # next version
+    # next version?
     # def view_graph(self):
     #     if self.logging == True:
     #         self.logger.update_displays()
@@ -1108,8 +1220,11 @@ class App(tk.Tk):
         except Exception as e:
             self.q3.put({'error': "There was an error while saving your file in the path '{}'.".format(f)})
 
+        tab = self.last_update["tab"]
+        newtabname = str(f).split("/")[-1]
+        self.note.tab(tab, text=newtabname)
 
-
+    # This function will only work with an updater.py file.
     def check_for_update(self, booting=False):
         try:
             res, link, v = updater.check_for_update(str(__version__))
@@ -1135,11 +1250,12 @@ def save_session():
     name = root.last_update["name"]
     src = root.last_update['source']
     dts = {k:float(v.get()) for k,v in root.delay_tuners.items()}
-    d = {'text': txt, 'source': src, 'name': name, 'delay_vars': dts}
+    d = {'text': txt, 'source': src, 'name': name, 'delay_vars': dts,
+        'auto adjustment': {'variable': root.aavar.get(), 'value': root.aaval.get(), 'frequency': root.aafreq.get()}}
     with open(DATAPATH + "\\" + "lastsession.txt", "w") as f:
         f.write(str(d))
         f.close()
-    quit()
+    sys.exit()
 
 
 if __name__ == '__main__':
@@ -1158,7 +1274,6 @@ if __name__ == '__main__':
     inp = _input.Inputter(args=args)
     inp.daemon = True
     inp.start()
-
 
     args = (q1, q2, q3, q4, root.port, root.pjoy_type, HID_REPORT)
     out = _output.Outputter(args=args)

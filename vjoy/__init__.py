@@ -337,14 +337,14 @@ class VXBOX_Device(object):
         result = vj.SetAxisY(self.id, y)
 
         if result == False:
-            print("bad result: hexy = {}".format(hexy))
+            print("bad result: x,y = {}".format(str(x, y)))
             return False
 
         xval = x if flipx == False else -x
         result = vj.SetAxisX(self.id, xval)
 
         if result == False:
-            print("bad result: xval = {}".format(xval))
+            print("bad result: x,y = {}".format(str(x, y)))
             return False
 
         return time.time()
@@ -367,8 +367,12 @@ class VXBOX_Device(object):
         return time.time()
 
     def delay(self, t, flipx=None):
-        time.sleep(t)
+        try:
+            time.sleep(t)
+        except ValueError:
+            pass
         return time.time()
+
 
 
     def delay_for(self, t):

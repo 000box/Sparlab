@@ -13,8 +13,8 @@ DEFAULT_SETTINGS = {
                     # 'Fixed Delay': 0.00,
                     # 'Start Delay': 2.0,
                     'default direction': 'R',
-                    'play hotkey': '0',
-                    'flip x axis hotkey': '/',
+                    # 'play hotkey': '[+]',
+                    # 'flip x axis hotkey': '/',
                     'virtual joy port': 1,
                     'virtual joy type': 'xbox',
                     'analog configs':
@@ -101,6 +101,7 @@ DEFAULT_SETTINGS = {
                                             'y max':	13107}},
 
                     'Delay Variables': ['dv1','dv2','dv3','dv4','dv5'],
+                    'delay variable # of decimals': 4,
                     'button configs':
                                         {'xbox':
                                                 {1: ('dpu_d', 'dpu_u'), 2: ('dpd_d', 'dpd_u'), 3: ('dpl_d', 'dpl_u'), 4: ('dpr_d', 'dpr_u'), 5: ('start_d', 'start_u'),
@@ -141,67 +142,165 @@ DEFAULT_SETTINGS = {
 
 
 # So user can navigate around menu
+# DEFAULT_ACTIONS = {'filename': 'ae_default.txt',
+#                     'include': True,
+#                     'action config':
+#                                     { 'A': {'Notation': 'A', 'Hotkey': 'space+a', 'String': ['a_d', 'delay(0.015)', 'a_u']},
+#                                         'B': {'Notation': 'B', 'Hotkey': 'space+b', 'String': ['b_d', 'delay(0.015)', 'b_u']},
+#                                         'X': {'Notation': 'X', 'Hotkey': 'space+x', 'String': ['x_d', 'delay(0.015)', 'x_u']},
+#                                         'Y': {'Notation': 'Y', 'Hotkey': 'space+y', 'String': ['y_d', 'delay(0.015)', 'y_u']},
+#                                         'Start': {'Notation': 'None', 'Hotkey': 's+t', 'String': ['start_d', 'delay(0.015)', 'start_u']},
+#                                         'Back': {'Notation': 'None', 'Hotkey': 'b+k', 'String': ['back_d','delay(0.015)','back_u']},
+#                                         'RT': {'Notation': 'RT', 'Hotkey': 'r+t', 'String': ['rt_d', 'delay(0.015)', 'rt_u']},
+#                                         'LT': {'Notation': 'LT', 'Hotkey': 'l+t', 'String': ['lt_d', 'delay(0.015)', 'lt_u']},
+#                                         'LB': {'Notation': 'LB', 'Hotkey': 'l+b', 'String': ['lb_d', 'delay(0.015)', 'lb_u']},
+#                                         'RB': {'Notation': 'RB', 'Hotkey': 'r+b', 'String': ['rb_d', 'delay(0.015)', 'rb_u']},
+#                                         'DPU': {'Notation': 'DPU', 'Hotkey': 'd+p+u', 'String': ['dpu_d', 'delay(0.015)', 'dpu_u']},
+#                                         'DPR': {'Notation': 'DPR', 'Hotkey': 'd+p+r', 'String': ['dpr_d', 'delay(0.015)', 'dpr_u']},
+#                                         'DPL': {'Notation': 'DPL', 'Hotkey': 'd+p+l', 'String': ['dpl_d', 'delay(0.015)', 'dpl_u']},
+#                                         'DPD': {'Notation': 'DPD', 'Hotkey': 'd+p+space', 'String': ['dpd_d', 'delay(0.015)', 'dpd_u']}}
+#
+#                     }
+#
+# TEKKEN_ACTIONS = {'filename': "ae_tekken.txt",
+#                     'include': False,
+#                     'action config':
+#                                     { 'left punch': {'Notation': '1',  'String': ['x_d', 'delay(0.015)', 'x_u']},
+#                                     'right kick': {'Notation': '3',  'String': ['b_d', 'delay(0.015)', 'b_u']},
+#                                     'left kick': {'Notation': '4', 'Hotkey': 'l+p', 'String': ['a_d', 'delay(0.015)', 'a_u']},
+#                                     'right punch': {'Notation': '2',  'String': ['y_d', 'delay(0.015)', 'y_u']},
+#                                     'right punch': {'Notation': '2',  'String': ['y_d', 'delay(0.015)', 'y_u']},
+#                                     'forward': {'Notation': 'f',  'String': ['la_r', 'delay(0.030)', 'la_n']},
+#                                     'backward': {'Notation': 'b',  'String': ['la_l', 'delay(0.030)', 'la_n']},
+#                                     'down-forward': {'Notation': 'd/f',  'String': ['la_dr', 'delay(0.015)', 'la_n']},
+#                                     'up-forward': {'Notation': 'u/f',  'String': ['la_ur', 'delay(0.015)', 'la_n']},
+#                                     'down-backward': {'Notation': 'd/b',  'String': ['la_dl', 'delay(0.015)', 'la_n']},
+#                                     'up-backward': {'Notation': 'u/b',  'String': ['la_ul', 'delay(0.015)', 'la_n']},
+#                                     'backward': {'Notation': 'b',  'String': ['la_l', 'delay(0.030)', 'la_n']},
+#                                     'crouch': {'Notation': 'u',  'String': ['la_d', 'delay(0.030)', 'la_n']},
+#                                     'jump': {'Notation': 'd',  'String': ['la_u', 'delay(0.030)', 'la_n']},
+#                                     'back-2 combo': {'Notation': 'b+2',  'String': ['la_l', 'y_d', 'delay(0.015)', 'neutral']},
+#                                     'Crouch-Dash': {'Notation': 'cd',  'String': ['la_r','delay(0.02)', 'la_n', 'delay(0.02)', 'la_d', 'delay(0.02)', 'la_dr', 'delay(0.015)']}}
+#                 }
+#
+#
+# SOULCALIBUR_ACTIONS = {'filename': "ae_soulcalibur.txt",
+#                         'include': False,
+#                         'action config':
+#                                         { 'A': {'Notation': 'A',  'String': ['x_d', 'delay(0.015)', 'x_u']},
+#                                         'K': {'Notation': 'K',  'String': ['b_d', 'delay(0.015)', 'b_u']},
+#                                         'G': {'Notation': 'G',  'String': ['a_d', 'delay(0.015)', 'a_u']},
+#                                         'B': {'Notation': 'B',  'String': ['y_d', 'delay(0.015)', 'y_u']},
+#                                         'A+G': {'Notation': 'A+G',  'String': ['lt_d', 'delay(0.015)', 'lt_u']},
+#                                         'A+B': {'Notation': 'A+B',  'String': ['lb_d', 'delay(0.015)', 'lb_u']},
+#                                         'B+G': {'Notation': 'B+G',  'String': ['rb_d', 'delay(0.015)', 'rb_u']},
+#                                         'A+B+K': {'Notation': 'A+B+K',  'String': ['rt_d', 'delay(0.015)', 'rt_u']},
+#                                         'forward': {'Notation': '6',  'String': ['la_r', 'delay(0.030)', 'la_n']},
+#                                         'backward': {'Notation': '4',  'String': ['la_l', 'delay(0.030)', 'la_n']},
+#                                         'down-forward': {'Notation': '3',  'String': ['la_dr', 'delay(0.015)', 'la_n']},
+#                                         'up-forward': {'Notation': '9',  'String': ['la_ur', 'delay(0.015)', 'la_n']},
+#                                         'down-backward': {'Notation': '1',  'String': ['la_dl', 'delay(0.015)', 'la_n']},
+#                                         'up-backward': {'Notation': '7',  'String': ['la_ul', 'delay(0.015)', 'la_n']},
+#                                         'backward': {'Notation': '4',  'String': ['la_l', 'delay(0.030)', 'la_n']},
+#                                         'crouch': {'Notation': '2',  'String': ['la_d', 'delay(0.030)', 'la_n']},
+#                                         'jump': {'Notation': '8',  'String': ['la_u', 'delay(0.030)', 'la_n']}}
+#                         }
+
 DEFAULT_ACTIONS = {'filename': 'ae_default.txt',
                     'include': True,
                     'action config':
-                                    { 'A': {'Notation': 'A', 'Hotkey': 'space+a', 'String': ['a_d', 'delay(0.015)', 'a_u']},
-                                        'B': {'Notation': 'B', 'Hotkey': 'space+b', 'String': ['b_d', 'delay(0.015)', 'b_u']},
-                                        'X': {'Notation': 'X', 'Hotkey': 'space+x', 'String': ['x_d', 'delay(0.015)', 'x_u']},
-                                        'Y': {'Notation': 'Y', 'Hotkey': 'space+y', 'String': ['y_d', 'delay(0.015)', 'y_u']},
-                                        'Start': {'Notation': 'None', 'Hotkey': 's+t', 'String': ['start_d', 'delay(0.015)', 'start_u']},
-                                        'Back': {'Notation': 'None', 'Hotkey': 'b+k', 'String': ['back_d','delay(0.015)','back_u']},
-                                        'RT': {'Notation': 'RT', 'Hotkey': 'r+t', 'String': ['rt_d', 'delay(0.015)', 'rt_u']},
-                                        'LT': {'Notation': 'LT', 'Hotkey': 'l+t', 'String': ['lt_d', 'delay(0.015)', 'lt_u']},
-                                        'LB': {'Notation': 'LB', 'Hotkey': 'l+b', 'String': ['lb_d', 'delay(0.015)', 'lb_u']},
-                                        'RB': {'Notation': 'RB', 'Hotkey': 'r+b', 'String': ['rb_d', 'delay(0.015)', 'rb_u']},
-                                        'DPU': {'Notation': 'DPU', 'Hotkey': 'd+p+u', 'String': ['dpu_d', 'delay(0.015)', 'dpu_u']},
-                                        'DPR': {'Notation': 'DPR', 'Hotkey': 'd+p+r', 'String': ['dpr_d', 'delay(0.015)', 'dpr_u']},
-                                        'DPL': {'Notation': 'DPL', 'Hotkey': 'd+p+l', 'String': ['dpl_d', 'delay(0.015)', 'dpl_u']},
-                                        'DPD': {'Notation': 'DPD', 'Hotkey': 'd+p+space', 'String': ['dpd_d', 'delay(0.015)', 'dpd_u']}}
+                                    { 'A': {'Notation': 'A', 'String': ['a_d', 'delay(0.015)', 'a_u']},
+                                        'B': {'Notation': 'B', 'String': ['b_d', 'delay(0.015)', 'b_u']},
+                                        'X': {'Notation': 'X', 'String': ['x_d', 'delay(0.015)', 'x_u']},
+                                        'Y': {'Notation': 'Y', 'String': ['y_d', 'delay(0.015)', 'y_u']},
+                                        'Start': {'Notation': 'None','String': ['start_d', 'delay(0.015)', 'start_u']},
+                                        'Back': {'Notation': 'None','String': ['back_d','delay(0.015)','back_u']},
+                                        'RT': {'Notation': 'RT','String': ['rt_d', 'delay(0.015)', 'rt_u']},
+                                        'LT': {'Notation': 'LT','String': ['lt_d', 'delay(0.015)', 'lt_u']},
+                                        'LB': {'Notation': 'LB','String': ['lb_d', 'delay(0.015)', 'lb_u']},
+                                        'RB': {'Notation': 'RB','String': ['rb_d', 'delay(0.015)', 'rb_u']},
+                                        'DPU': {'Notation': 'DPU', 'String': ['dpu_d', 'delay(0.015)', 'dpu_u']},
+                                        'DPR': {'Notation': 'DPR', 'String': ['dpr_d', 'delay(0.015)', 'dpr_u']},
+                                        'DPL': {'Notation': 'DPL', 'String': ['dpl_d', 'delay(0.015)', 'dpl_u']},
+                                        'DPD': {'Notation': 'DPD', 'String': ['dpd_d', 'delay(0.015)', 'dpd_u']}}
 
                     }
 
 TEKKEN_ACTIONS = {'filename': "ae_tekken.txt",
                     'include': False,
                     'action config':
-                                    { 'left punch': {'Notation': '1', 'Hotkey': 'None', 'String': ['x_d', 'delay(0.015)', 'x_u']},
-                                    'right kick': {'Notation': '3', 'Hotkey': 'None', 'String': ['b_d', 'delay(0.015)', 'b_u']},
-                                    'left kick': {'Notation': '4', 'Hotkey': 'l+p', 'String': ['a_d', 'delay(0.015)', 'a_u']},
-                                    'right punch': {'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.015)', 'y_u']},
-                                    'right punch': {'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.015)', 'y_u']},
-                                    'forward': {'Notation': 'f', 'Hotkey': 'None', 'String': ['la_r', 'delay(0.030)', 'la_n']},
-                                    'backward': {'Notation': 'b', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
-                                    'down-forward': {'Notation': 'd/f', 'Hotkey': 'None', 'String': ['la_dr', 'delay(0.015)', 'la_n']},
-                                    'up-forward': {'Notation': 'u/f', 'Hotkey': 'None', 'String': ['la_ur', 'delay(0.015)', 'la_n']},
-                                    'down-backward': {'Notation': 'd/b', 'Hotkey': 'None', 'String': ['la_dl', 'delay(0.015)', 'la_n']},
-                                    'up-backward': {'Notation': 'u/b', 'Hotkey': 'None', 'String': ['la_ul', 'delay(0.015)', 'la_n']},
-                                    'backward': {'Notation': 'b', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
-                                    'crouch': {'Notation': 'u', 'Hotkey': 'None', 'String': ['la_d', 'delay(0.030)', 'la_n']},
-                                    'jump': {'Notation': 'd', 'Hotkey': 'None', 'String': ['la_u', 'delay(0.030)', 'la_n']}}
+                                    { 'left punch': {'Notation': '1', 'String': ['x_d', 'delay(0.015)', 'x_u']},
+                                    'right kick': {'Notation': '3', 'String': ['b_d', 'delay(0.015)', 'b_u']},
+                                    'left kick': {'Notation': '4', 'String': ['a_d', 'delay(0.015)', 'a_u']},
+                                    'right punch': {'Notation': '2', 'String': ['y_d', 'delay(0.015)', 'y_u']},
+                                    'right punch': {'Notation': '2', 'String': ['y_d', 'delay(0.015)', 'y_u']},
+                                    'forward': {'Notation': 'f', 'String': ['la_r', 'delay(0.030)', 'la_n']},
+                                    'backward': {'Notation': 'b', 'String': ['la_l', 'delay(0.030)', 'la_n']},
+                                    'down-forward': {'Notation': 'd/f', 'String': ['la_dr', 'delay(0.015)', 'la_n']},
+                                    'up-forward': {'Notation': 'u/f', 'String': ['la_ur', 'delay(0.015)', 'la_n']},
+                                    'down-backward': {'Notation': 'd/b', 'String': ['la_dl', 'delay(0.015)', 'la_n']},
+                                    'up-backward': {'Notation': 'u/b', 'String': ['la_ul', 'delay(0.015)', 'la_n']},
+                                    'backward': {'Notation': 'b', 'String': ['la_l', 'delay(0.030)', 'la_n']},
+                                    'crouch': {'Notation': 'u', 'String': ['la_d', 'delay(0.030)', 'la_n']},
+                                    'jump': {'Notation': 'd', 'String': ['la_u', 'delay(0.030)', 'la_n']},
+                                    'back-2 combo': {'Notation': 'b+2', 'String': ['la_l', 'y_d', 'delay(0.015)', 'neutral']},
+                                    'Crouch-Dash': {'Notation': 'cd', 'String': ['la_r','delay(0.02)', 'la_n', 'delay(0.02)', 'la_d', 'delay(0.02)', 'la_dr', 'delay(0.015)']}}
                 }
 
 
 SOULCALIBUR_ACTIONS = {'filename': "ae_soulcalibur.txt",
                         'include': False,
                         'action config':
-                                        { 'A': {'Notation': 'A', 'Hotkey': 'None', 'String': ['x_d', 'delay(0.015)', 'x_u']},
-                                        'K': {'Notation': 'K', 'Hotkey': 'None', 'String': ['b_d', 'delay(0.015)', 'b_u']},
-                                        'G': {'Notation': 'G', 'Hotkey': 'None', 'String': ['a_d', 'delay(0.015)', 'a_u']},
-                                        'B': {'Notation': 'B', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.015)', 'y_u']},
-                                        'A+G': {'Notation': 'A+G', 'Hotkey': 'None', 'String': ['lt_d', 'delay(0.015)', 'lt_u']},
-                                        'A+B': {'Notation': 'A+B', 'Hotkey': 'None', 'String': ['lb_d', 'delay(0.015)', 'lb_u']},
-                                        'B+G': {'Notation': 'B+G', 'Hotkey': 'None', 'String': ['rb_d', 'delay(0.015)', 'rb_u']},
-                                        'A+B+K': {'Notation': 'A+B+K', 'Hotkey': 'None', 'String': ['rt_d', 'delay(0.015)', 'rt_u']},
-                                        'forward': {'Notation': '6', 'Hotkey': 'None', 'String': ['la_r', 'delay(0.030)', 'la_n']},
-                                        'backward': {'Notation': '4', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
-                                        'down-forward': {'Notation': '3', 'Hotkey': 'None', 'String': ['la_dr', 'delay(0.015)', 'la_n']},
-                                        'up-forward': {'Notation': '9', 'Hotkey': 'None', 'String': ['la_ur', 'delay(0.015)', 'la_n']},
-                                        'down-backward': {'Notation': '1', 'Hotkey': 'None', 'String': ['la_dl', 'delay(0.015)', 'la_n']},
-                                        'up-backward': {'Notation': '7', 'Hotkey': 'None', 'String': ['la_ul', 'delay(0.015)', 'la_n']},
-                                        'backward': {'Notation': '4', 'Hotkey': 'None', 'String': ['la_l', 'delay(0.030)', 'la_n']},
-                                        'crouch': {'Notation': '2', 'Hotkey': 'None', 'String': ['la_d', 'delay(0.030)', 'la_n']},
-                                        'jump': {'Notation': '8', 'Hotkey': 'None', 'String': ['la_u', 'delay(0.030)', 'la_n']}}
+                                        { 'A': {'Notation': 'A',  'String': ['x_d', 'delay(0.015)', 'x_u']},
+                                        'K': {'Notation': 'K',  'String': ['b_d', 'delay(0.015)', 'b_u']},
+                                        'G': {'Notation': 'G',  'String': ['a_d', 'delay(0.015)', 'a_u']},
+                                        'B': {'Notation': 'B',  'String': ['y_d', 'delay(0.015)', 'y_u']},
+                                        'A+G': {'Notation': 'A+G',  'String': ['lt_d', 'delay(0.015)', 'lt_u']},
+                                        'A+B': {'Notation': 'A+B',  'String': ['lb_d', 'delay(0.015)', 'lb_u']},
+                                        'B+G': {'Notation': 'B+G',  'String': ['rb_d', 'delay(0.015)', 'rb_u']},
+                                        'A+B+K': {'Notation': 'A+B+K',  'String': ['rt_d', 'delay(0.015)', 'rt_u']},
+                                        'forward': {'Notation': '6',  'String': ['la_r', 'delay(0.030)', 'la_n']},
+                                        'backward': {'Notation': '4',  'String': ['la_l', 'delay(0.030)', 'la_n']},
+                                        'down-forward': {'Notation': '3',  'String': ['la_dr', 'delay(0.015)', 'la_n']},
+                                        'up-forward': {'Notation': '9',  'String': ['la_ur', 'delay(0.015)', 'la_n']},
+                                        'down-backward': {'Notation': '1',  'String': ['la_dl', 'delay(0.015)', 'la_n']},
+                                        'up-backward': {'Notation': '7',  'String': ['la_ul', 'delay(0.015)', 'la_n']},
+                                        'backward': {'Notation': '4',  'String': ['la_l', 'delay(0.030)', 'la_n']},
+                                        'crouch': {'Notation': '2',  'String': ['la_d', 'delay(0.030)', 'la_n']},
+                                        'jump': {'Notation': '8',  'String': ['la_u', 'delay(0.030)', 'la_n']}}
                         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """
 # Next Version
@@ -229,6 +328,7 @@ CATEGORIES = {
                             'virtual joy port': {'type': 'int', 'Description': 'The "port" where your virtual joystick plugs into. Can be 1,2,3 or 4.'},
                             'physical joy type': {'type': 'str', 'Description': 'Can be "arcade stick", "xbox", or "keyboard".'},
                             'Delay Variables': {'type': 'list', 'Description': 'These are for inserting into your script/action strings to simulate delay.'},
+                            'delay variable # of decimals': {'type': 'int', 'Description': 'None'},
                             'virtual joy text color': {'type': 'str', 'Description': 'The color of this joy\'s outfeed text.'},
                             'physical joy text color': {'type': 'str', 'Description': 'The color of this joy\'s outfeed text.'},
                             'virtual joy type': {'type': 'str', 'Description': 'This setting must be equal to "xbox" for now.'}
@@ -315,54 +415,54 @@ class PopupDoc(tk.Toplevel):
         self.master = master
         self.action_reference(info)
 
-    def action_reference(self, info):
-        forbidden = ["None", None, ""]
-        settings = {}
-        tolookfor = ["play hotkey", "flip x axis hotkey"]
-        for k,v in info["Settings"].items():
-            if k in tolookfor:
-                settings[k] = v
-
-        hks = {}
-        for k,v in info["Actions"].items():
-            if v["Hotkey"] not in forbidden:
-                hks[k] = v["Hotkey"]
-
-        notations = {}
-        for k,v in info["Actions"].items():
-            if v["Notation"] not in forbidden:
-                notations[k] = v["Notation"]
-
-        strings = {}
-        for k,v in info["Actions"].items():
-            if v["String"] not in forbidden:
-                strings[k] = v["String"]
-
-        # textbox for main keys
-        tk.Label(self, text="Hotkeys", font="Verdana 12").pack(side="top")
-        hkbox = tk.Text(self, width=8, height=5, state='normal')
-        hkbox.pack(anchor='nw', side='top', padx=5, pady=10, fill='both', expand=1)
-        for iter, (k,v) in enumerate(settings.items()):
-            hkbox.insert("{}.0".format(str(iter+1)), k + ":\t" + v + "\n")
-        for iter1, (k,v) in enumerate(hks.items()):
-            hkbox.insert("{}.0".format(str(iter + iter1 + 1)), k + ":\t" + v + "\n")
-        hkbox.config(state='disabled')
-
-        tk.Label(self, text="Notations", font="Verdana 12").pack(side="top")
-        notationbox = tk.Text(self, width=16, height=5, state='normal')
-        notationbox.pack(anchor='s', side='top', padx=5, pady=10, fill='both', expand=1)
-        for iter, (k,v) in enumerate(notations.items()):
-            notationbox.insert("{}.0".format(str(iter + 1)), k + ":\t" + v + "\n")
-        notationbox.config(state='disabled')
-
-        tk.Label(self, text="Strings", font="Verdana 12").pack(side="top")
-        self.sbox = tk.Text(self, width=16, height=5, state='normal')
-        self.sbox.pack(anchor='s', side='top', padx=5, pady=10, fill='both', expand=1)
-        for iter, (k,v) in enumerate(strings.items()):
-            self.sbox.insert("{}.0".format(str(iter + 1)), k + ":\t" + str(v) + "\n")
-        self.sbox.config(state='disabled')
-
-        ttk.Button(self, text="Cancel", command=lambda: self.destroy()).pack(side='bottom', anchor='s', pady=5)
+    # def action_reference(self, info):
+    #     forbidden = ["None", None, ""]
+    #     settings = {}
+    #     tolookfor = ["play hotkey", "flip x axis hotkey"]
+    #     for k,v in info["Settings"].items():
+    #         if k in tolookfor:
+    #             settings[k] = v
+    #
+    #     hks = {}
+    #     for k,v in info["Actions"].items():
+    #         if v["Hotkey"] not in forbidden:
+    #             hks[k] = v["Hotkey"]
+    #
+    #     notations = {}
+    #     for k,v in info["Actions"].items():
+    #         if v["Notation"] not in forbidden:
+    #             notations[k] = v["Notation"]
+    #
+    #     strings = {}
+    #     for k,v in info["Actions"].items():
+    #         if v["String"] not in forbidden:
+    #             strings[k] = v["String"]
+    #
+    #     # textbox for main keys
+    #     tk.Label(self, text="Hotkeys", font="Verdana 12").pack(side="top")
+    #     hkbox = tk.Text(self, width=8, height=5, state='normal')
+    #     hkbox.pack(anchor='nw', side='top', padx=5, pady=10, fill='both', expand=1)
+    #     for iter, (k,v) in enumerate(settings.items()):
+    #         hkbox.insert("{}.0".format(str(iter+1)), k + ":\t" + v + "\n")
+    #     for iter1, (k,v) in enumerate(hks.items()):
+    #         hkbox.insert("{}.0".format(str(iter + iter1 + 1)), k + ":\t" + v + "\n")
+    #     hkbox.config(state='disabled')
+    #
+    #     tk.Label(self, text="Notations", font="Verdana 12").pack(side="top")
+    #     notationbox = tk.Text(self, width=16, height=5, state='normal')
+    #     notationbox.pack(anchor='s', side='top', padx=5, pady=10, fill='both', expand=1)
+    #     for iter, (k,v) in enumerate(notations.items()):
+    #         notationbox.insert("{}.0".format(str(iter + 1)), k + ":\t" + v + "\n")
+    #     notationbox.config(state='disabled')
+    #
+    #     tk.Label(self, text="Strings", font="Verdana 12").pack(side="top")
+    #     self.sbox = tk.Text(self, width=16, height=5, state='normal')
+    #     self.sbox.pack(anchor='s', side='top', padx=5, pady=10, fill='both', expand=1)
+    #     for iter, (k,v) in enumerate(strings.items()):
+    #         self.sbox.insert("{}.0".format(str(iter + 1)), k + ":\t" + str(v) + "\n")
+    #     self.sbox.config(state='disabled')
+    #
+    #     ttk.Button(self, text="Cancel", command=lambda: self.destroy()).pack(side='bottom', anchor='s', pady=5)
 
 
 # detailed report showing PJoy, VJoy, and detected USB devices plugged into PC

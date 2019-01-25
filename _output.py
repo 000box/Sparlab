@@ -85,6 +85,7 @@ class Outputter(Process):
                             self.analog_vals = self.settings['analog configs']
                             self.as_cfg = self.button_vals['arcade stick']
                             self.kb_cfg = self.button_vals['keyboard']
+                            self.dv_digits = self.settings['delay variable # of decimals']
                             # print("self.as_cfg = ", self.as_cfg)
                             self.joy_type = self.settings['physical joy type']
                         else:
@@ -97,6 +98,7 @@ class Outputter(Process):
                                 btn_cfg = self.settings["button configs"]
                                 kb_cfg = self.button_vals['keyboard']
                                 as_cfg = self.button_vals['arcade stick']
+                                dv_digits = self.settings['delay variable # of decimals']
 
                                 if any([joy_type != self.joy_type, analog_vals != self.analog_vals, as_cfg != self.as_cfg, btn_vals != self.button_vals]):
 
@@ -111,7 +113,7 @@ class Outputter(Process):
                                     self.as_cfg = as_cfg
                                     self.joy_type = joy_type
                                     self.kb_cfg = kb_cfg
-
+                                    self.dv_digits = dv_digits
                                     if self.joy_type == 'xbox':
                                         self.xbox_test()
                                         self.xbox_process()
@@ -198,7 +200,7 @@ class Outputter(Process):
                     elif time_bw_events > 0:
                         startover = False
                         if time_bw_events >= 0.005:
-                            action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                            action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
                         else:
                             action = ",'{}'".format(act)
                         self.pressed.append(button)
@@ -211,7 +213,7 @@ class Outputter(Process):
                         try:
                             self.pressed.remove(button)
                             if time_bw_events >= 0.005:
-                                action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                                action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
                             else:
                                 action = ",'{}'".format(act)
 
@@ -240,6 +242,7 @@ class Outputter(Process):
             time_bw_events = now - self.last_tmark
 
             if self.raw_out == True:
+                value = str((value[0] * 65536, value[1] * 65536))
                 self.q3.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'pjoy'})
                 return
 
@@ -283,7 +286,7 @@ class Outputter(Process):
                                 self.pressed.remove(a)
 
                         if time_bw_events >= 0.005:
-                            action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                            action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
                         else:
                             action = ",'{}'".format(act)
 
@@ -312,7 +315,7 @@ class Outputter(Process):
                         startover = False
                         self.pressed.append(act)
                         if time_bw_events >= 0.005:
-                            action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                            action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
                         else:
                             action = ",'{}'".format(act)
 
@@ -355,30 +358,35 @@ class Outputter(Process):
             except: k = key.name # other keys
 
             if k in list(self.button_vals['keyboard']): # keys interested
+                print("press: {}".format(k))
                 # self.keys.append(k) # store it in global-like variable
+                try:
+                    act = self.button_vals['keyboard'][k][0]
+                    value = 1
+                    time_bw_events = now - self.last_tmark
 
-                act = self.button_vals['keyboard'][k][0]
-                value = 1
-                time_bw_events = now - self.last_tmark
+                    if time_bw_events > 0.2 and len(self.pressed) == 0:
+                        startover = True
+                        time_bw_events = 0
+                        action = "]\n['{}'".format(act)
 
-                if time_bw_events > 0.2 and len(self.pressed) == 0:
-                    startover = True
-                    time_bw_events = 0
-                    action = "]\n['{}'".format(act)
-                else:
-                    startover = False
-                    action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                    else:
+                        startover = False
+                        action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
 
-                if self.raw_out:
-                    self.q3.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
-                    return
+                    if self.raw_out:
+                        self.q3.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
+                        return
+
+                    if act not in self.pressed:
+                        info = {'joy': 'pjoy', 'action': action, 'start over': startover}
+                        self.q3.put(info)
+                        self.last_tmark = now
+                        self.pressed.append(act)
+                except Exception as e:
+                    print("error ({}) ; key ({})".format(e, k))
 
 
-                if act not in self.pressed:
-                    info = {'joy': 'pjoy', 'action': action, 'start over': startover}
-                    self.q3.put(info)
-                    self.last_tmark = now
-                    self.pressed.append(act)
 
         def on_release(key):
             now = time.time()
@@ -397,7 +405,7 @@ class Outputter(Process):
                 time_bw_events = now - self.last_tmark
                 startover = False
 
-                action = ",'delay({})','{}'".format(round(time_bw_events, 3), act)
+                action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
 
                 if self.raw_out:
                     self.q3.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
@@ -420,13 +428,21 @@ class Outputter(Process):
                 break
             except AttributeError:
                 time.sleep(0.1)
-                # print("waiting on settings...")
+                print("waiting on settings...")
 
         self.pressed = []
         self.last_value = 0
         self.last_tmark = time.time()
         self.last_act = None
         self.listener = kb.keyboard.Listener(on_press=on_press, on_release=on_release)
+
+        pj_report = """
+                    Physical Joystick Type: {}
+                    Joystick Instance: {}
+                    """.format(self.joy_type, self.listener)
+
+        self.q3.put({'pjoy report': pj_report})
+
         self.listener.start() # start to listen on a separate thread
 
 
@@ -625,7 +641,7 @@ class Outputter(Process):
             action = "]\n['{}'".format(action)
         else:
             startover = False
-            action = ",'delay({})','{}'".format(round(time_bw_events, 3), action)
+            action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), action)
 
 
         info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy'}
