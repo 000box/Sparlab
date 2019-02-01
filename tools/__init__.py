@@ -9,14 +9,9 @@ import Pmw as pmw"""
 
 
 DEFAULT_SETTINGS = {
-                    'fps': 60,
-                    # 'Fixed Delay': 0.00,
-                    # 'Start Delay': 2.0,
                     'default direction': 'R',
-                    # 'play hotkey': '[+]',
-                    # 'flip x axis hotkey': '/',
-                    'virtual joy port': 1,
-                    'virtual joy type': 'xbox',
+                    '# of Virtual Joysticks': 2,
+                    '# of Physical Joysticks': 1,
                     'analog configs':
                                     {
                                     'la_dl':
@@ -100,7 +95,7 @@ DEFAULT_SETTINGS = {
                                             'y min':	-13107,
                                             'y max':	13107}},
 
-                    'Delay Variables': ['dv1','dv2','dv3','dv4','dv5'],
+                    'Delay Variables': ['dv1','dv2'],
                     'delay variable # of decimals': 4,
                     'button configs':
                                         {'xbox':
@@ -127,17 +122,9 @@ DEFAULT_SETTINGS = {
                                                                                                                                     7: 'la_ul', 15: 'la_n'}}}},
 
 
-
-
-
-
-
-
                     'Action Files': ['ae_default.txt', 'ae_tekken.txt', 'ae_soulcalibur.txt'],
-                    'physical joy type': 'keyboard',
-                    # 'outfeed max characters': 400,
-                    'virtual joy text color': 'purple',
-                    'physical joy text color': 'red'}
+                    'physical joy type': 'keyboard'}
+                    # 'outfeed max characters': 400,}
                     # 'default neutral allowance': 0.7}
 
 

@@ -1,3 +1,4 @@
+
 import sys
 import os
 from ctypes import *
@@ -18,12 +19,6 @@ class VXBOX_Device(object):
         self.id = rID
         self.is_on = False
 
-    def combine(self, acts): #acts = [(attr ,flipx), (attr2, flipx), ...]
-        # print("combined acts: ", acts)
-        for a in acts:
-            attr, fx = a
-            getattr(self, str(attr))('bla', flipx=fx)
-        return time.time()
 
     def a_d(self, cfg, flipx=None):
         result = vj.SetBtnA(self.id, True)
@@ -140,32 +135,61 @@ class VXBOX_Device(object):
             return time.time()
 
     def rt_d(self, cfg, flipx=None):
-        result = vj.SetTriggerR(self.id, True)
+        result = vj.SetTriggerR(self.id, 255)
         if result == False:
             return False
         else:
             return time.time()
 
     def rt_u(self, cfg, flipx=None):
-        result = vj.SetTriggerR(self.id, False)
+        result = vj.SetTriggerR(self.id, 0)
         if result == 0:
             return False
         else:
             return time.time()
 
     def lt_d(self, cfg, flipx=None):
-        result = vj.SetTriggerL(self.id, True)
+        result = vj.SetTriggerL(self.id, 255)
         if result == False:
             return False
         else:
             return time.time()
 
     def lt_u(self, cfg, flipx=None):
-        result = vj.SetTriggerL(self.id, False)
+        result = vj.SetTriggerL(self.id, 0)
         if result == 0:
             return False
         else:
             return time.time()
+
+    def ls_d(self, cfg, flipx=None):
+        result = vj.SetBtnLT(self.id, True)
+        if result == 0:
+            return False
+        else:
+            return time.time()
+
+    def ls_u(self, cfg, flipx=None):
+        result = vj.SetBtnLT(self.id, False)
+        if result == 0:
+            return False
+        else:
+            return time.time()
+
+    def rs_d(self, cfg, flipx=None):
+        result = vj.SetBtnRT(self.id, True)
+        if result == 0:
+            return False
+        else:
+            return time.time()
+
+    def rs_u(self, cfg, flipx=None):
+        result = vj.SetBtnRT(self.id, False)
+        if result == 0:
+            return False
+        else:
+            return time.time()
+
 
     def dpu_d(self, cfg, flipx=None):
         result = vj.SetDpadUp(self.id)
@@ -324,11 +348,6 @@ class VXBOX_Device(object):
         else:
             return result
 
-    def j_f(self, fps, flipx=None):
-        s = int(fps) / 1000
-        time.sleep(s)
-        return time.time()
-
 
     def la(self, state, flipx=False):
         x, y = (int(state['x fix']), int(state['y fix']))
@@ -374,15 +393,6 @@ class VXBOX_Device(object):
         return time.time()
 
 
-
-    def delay_for(self, t):
-        begin = time.time()
-        time.sleep(t)
-        end = time.time()
-        print("delay_for runtime (t = {}): ".format(t), end - begin)
-        return time.time()
-        #
-
     def neutral(self, cfg, flipx=None):
         vj.SetBtnA(self.id,False)
         vj.SetBtnB(self.id,False)
@@ -400,28 +410,6 @@ class VXBOX_Device(object):
         vj.SetAxisRx(self.id,0)
         vj.SetAxisRy(self.id,0)
         return time.time()
-
-    def i_a_i(self, yes):
-        pass
-
-
-    def action_interval(self, t, ignore=False):
-        if ignore == True:
-            time.time()
-        # by default
-        # sleep between every action so there are spaces b/w inputs (configurable in settings.txt)
-        time.sleep(t)
-        return time.time()
-        # print("action interval runtime: ", runtime)
-
-    # i, i2p, act, cfg, flipx, t, fps
-    # listener = input.Session_Thread(args=(q1, q2, root.port))
-    # listener.daemon = True
-    # listener.start()
-
-    def procrast(self, st, a, cfg, fx):
-        time.sleep(st)
-        getattr(self, str(a))(cfg, flipx=fx)
 
     def isControllerOwned(self, cfg):
         return self.isControllerOwned(self.id)

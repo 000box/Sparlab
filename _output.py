@@ -18,10 +18,11 @@ class Outputter(Process):
                             'None': 'none_process'
                             }
 
-        self.q1, self.q2, self.q3, self.q4, self.port, self.joy_type, hid_out_fullpath = args
+        self.pj_ui, self.ui_pj, self.joy_type, hid_out_fullpath = args
         # queue for getting info from 1st process
         self.last_action_info = {'start over': True, 'action': 'None', 'type': 0, 'time': 0, 'joy': 'pjoy', 'value': (0, 0), 'tmark': time.clock()}
         self.raw_out = False
+
         with open(hid_out_fullpath, "w") as f:
             self.send_hid_report(f)
             f.close()
@@ -36,14 +37,14 @@ class Outputter(Process):
             hid.core.show_hids(output = outfile)
         except Exception as e:
             print("HID Error: ", e)
-            self.q3.put({'warning': 'HID information was not able to be sent to your Device Report.'})
+            self.pj_ui.put({'warning': 'HID information was not able to be sent to your Device Report.'})
 
 
     def xbox_test(self, fromq=False):
         self.joys = XInputJoystick.enumerate_devices()
 
         if not self.joys:
-            self.q3.put({'warning': 'No xbox device was found. Change your pjoy type in settings'})
+            self.pj_ui.put({'warning': 'No xbox device was found. Change your pjoy type in settings'})
             self.joy_type == 'None'
             self.settings['physical joy type'] = self.joy_type
             self.none_process()
@@ -62,9 +63,9 @@ class Outputter(Process):
 
         # may need to find a more robust way of doing this. Test for speed
         #begin = time.clock()
-        while self.q4.qsize():
+        while self.ui_pj.qsize():
             try:
-                info = self.q4.get(0)
+                info = self.ui_pj.get(0)
                 if info is not None:
 
                     try:
@@ -73,6 +74,27 @@ class Outputter(Process):
                     except Exception as e:
                         pass
 
+
+                    # try:
+                    #     hks_on = info['hks enabled']
+                    #     if hks_on and self.joy_type == 'keyboard' and self.listener != None:
+                    #         print("79")
+                    #         self.last_joy_type = 'keyboard'
+                    #         self.joy_type = 'None'
+                    #         self.listener.stop()
+                    #         del self.listener
+                    #         self.listener = None
+                    #         self.none_process()
+                    #     elif not hks_on and self.joy_type == 'None' and self.last_joy_type == 'keyboard' and self.listener == None:
+                    #         print("85")
+                    #         self.joy_type = 'keyboard'
+                    #         time.sleep(0.5)
+                    #         self.kb_process()
+                    # except KeyError as e:
+                    #     pass
+                    # except Exception as e:
+                    #     print("HKS ENABLED OUT ERROR: ", e)
+                    #     self.pj_ui.put({'error': e})
                     try:
                         self.raw_out = info['raw output']
                     except KeyError as e:
@@ -125,16 +147,16 @@ class Outputter(Process):
                                     elif self.joy_type == 'None':
                                         self.none_process()
                                     else:
-                                        self.q3.put({'error': "{} is not a valid device type. Change your pjoy type in Settings".format(self.joy_type)})
+                                        self.pj_ui.put({'error': "{} is not a valid device type. Change your pjoy type in Settings".format(self.joy_type)})
                                         self.joy_type = 'None'
                                         self.settings['physical joy type'] = self.joy_type
                                         self.none_process()
 
                     except KeyError as e:
-                        pass
+                        print("keyerror: ", e)
                     except Exception as e:
                         print("SETTINGS (out): ", e)
-                        self.q3.put({'error': e})
+                        self.pj_ui.put({'error': e})
                         # pass
 
                         #print("HKS ON (out): ", e)
@@ -173,7 +195,7 @@ class Outputter(Process):
                     Hooks: {}
                     Joystick Instance: {}
                     """.format(self.joy_type, self.joys, xbhooks, self.pjoy)
-        self.q3.put({'pjoy report': pj_report})
+        self.pj_ui.put({'pjoy report': pj_report})
 
         @self.pjoy.event
         def on_button(button, pressed):
@@ -183,7 +205,7 @@ class Outputter(Process):
             time_bw_events = now - self.last_tmark
             #print('button', button, pressed)
             if self.raw_out == True:
-                self.q3.put({'raw': "[event: {}, value: {}]\n".format(button, pressed), 'joy': 'pjoy'})
+                self.pj_ui.put({'raw': "[event: {}, value: {}]\n".format(button, pressed), 'joy': 'pjoy'})
                 return
 
             act = self.button_vals['xbox'][button][::-1][pressed]
@@ -226,8 +248,8 @@ class Outputter(Process):
 
 
                 if not dontq:
-                    info = {'start over': startover, 'action': action, 'joy': 'pjoy'}
-                    self.q3.put(info)
+                    info = {'start over': startover, 'action': action, 'joy': 'pjoy', 'func': act}
+                    self.pj_ui.put(info)
 
                     self.last_tmark = now
 
@@ -243,7 +265,7 @@ class Outputter(Process):
 
             if self.raw_out == True:
                 value = str((value[0] * 65536, value[1] * 65536))
-                self.q3.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'pjoy'})
+                self.pj_ui.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'pjoy'})
                 return
 
             if axis not in ['lt', 'rt']:
@@ -325,9 +347,9 @@ class Outputter(Process):
                 if dontq:
                     return
 
-                info = {'start over': startover, 'action': action, 'joy': 'pjoy'}
+                info = {'start over': startover, 'action': action, 'joy': 'pjoy', 'func': act}
 
-                self.q3.put(info)
+                self.pj_ui.put(info)
                 self.last_tmark = now
                 self.current_axis = act
 
@@ -358,7 +380,7 @@ class Outputter(Process):
             except: k = key.name # other keys
 
             if k in list(self.button_vals['keyboard']): # keys interested
-                print("press: {}".format(k))
+                # print("press: {}".format(k))
                 # self.keys.append(k) # store it in global-like variable
                 try:
                     act = self.button_vals['keyboard'][k][0]
@@ -374,13 +396,15 @@ class Outputter(Process):
                         startover = False
                         action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
 
+
                     if self.raw_out:
-                        self.q3.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
+                        self.pj_ui.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
                         return
 
                     if act not in self.pressed:
-                        info = {'joy': 'pjoy', 'action': action, 'start over': startover}
-                        self.q3.put(info)
+                        info = {'joy': 'pjoy', 'action': action, 'start over': startover, 'func': act}
+                        print("put press to q3")
+                        self.pj_ui.put(info)
                         self.last_tmark = now
                         self.pressed.append(act)
                 except Exception as e:
@@ -394,11 +418,11 @@ class Outputter(Process):
             try: k = key.char # single-char keys
             except: k = key.name # other keys
 
-            print("k release before: ", k)
+            # print("k release before: ", k)
 
             if k in list(self.button_vals['keyboard']): # keys interested
                 # self.keys.append(k) # store it in global-like variable
-                print("k release after: ", k)
+                # print("k release after: ", k)
                 act = self.button_vals['keyboard'][k][1]
                 actspress = self.button_vals['keyboard'][k][0]
                 value = 0
@@ -408,11 +432,11 @@ class Outputter(Process):
                 action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
 
                 if self.raw_out:
-                    self.q3.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
+                    self.pj_ui.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
                     return
 
-                info = {'joy': 'pjoy', 'action': action, 'start over': startover}
-                self.q3.put(info)
+                info = {'joy': 'pjoy', 'action': action, 'start over': startover, 'func': act}
+                self.pj_ui.put(info)
                 self.last_value = value
                 self.last_tmark = now
                 self.last_act = act
@@ -441,7 +465,7 @@ class Outputter(Process):
                     Joystick Instance: {}
                     """.format(self.joy_type, self.listener)
 
-        self.q3.put({'pjoy report': pj_report})
+        self.pj_ui.put({'pjoy report': pj_report})
 
         self.listener.start() # start to listen on a separate thread
 
@@ -496,22 +520,22 @@ class Outputter(Process):
             self.device = hid.HidDeviceFilter(vendor_id = vID).get_devices()[0]
             self.device.open()
         except IndexError as e:
-            self.q3.put({'error': 'A device with vendor id "{}" could not be found'.format(vID)})
+            self.pj_ui.put({'error': 'A device with vendor id "{}" could not be found'.format(vID)})
             # print("618: ", e)
             self.joy_type = "None"
             self.settings['physical joy type'] = self.joy_type
-            self.q3.put({'pjoy report': pj_report})
+            self.pj_ui.put({'pjoy report': pj_report})
             self.none_process()
         except Exception as e:
             print("error: ", e)
-            self.q3.put({'error': 'An error occurred when attempting to point to a device with vendor id "{}". This might be happening because your device is not plugged in.'.format(vID)})
+            self.pj_ui.put({'error': 'An error occurred when attempting to point to a device with vendor id "{}". This might be happening because your device is not plugged in.'.format(vID)})
             self.joy_type = "None"
             self.settings['physical joy type'] = self.joy_type
-            self.q3.put({'pjoy report': pj_report})
+            self.pj_ui.put({'pjoy report': pj_report})
             self.none_process()
 
         if not self.device:
-            self.q3.put({'error': 'A device with vendor id "{}" could not be found'.format(vID)})
+            self.pj_ui.put({'error': 'A device with vendor id "{}" could not be found'.format(vID)})
             self.joy_type = "None"
             self.settings['physical joy type'] = self.joy_type
             self.none_process()
@@ -537,7 +561,7 @@ class Outputter(Process):
                 usage_hook = hid.get_full_usage_id(pID, uID)
                 cont = True
             except Exception as e:
-                self.q3.put({'error': e})
+                self.pj_ui.put({'error': e})
                 # print("647: ", e)
                 cont = False
 
@@ -559,7 +583,7 @@ class Outputter(Process):
                             self.device.add_event_handler(usage_hook, lambda event, value, v=vals, t=type: self.arcadestick_event(event, value, vals_=v, type_=t), hid.HID_EVT_CHANGED) #level usage
                             cont = True
                         except KeyError as e:
-                            self.q3.put({'error': "An error occured while attempting to add an event handler for usage id {}: {},".format(uID, e)})
+                            self.pj_ui.put({'error': "An error occured while attempting to add an event handler for usage id {}: {},".format(uID, e)})
                             cont = False                                                                                                             #   HID_EVT_CHANGED
 
                         if cont == True:
@@ -577,7 +601,7 @@ class Outputter(Process):
                     Hooks: {}
                     Joystick Instance: {}
                     """.format(self.joy_type, hooks, str(self.device))
-        self.q3.put({'pjoy report': pj_report})
+        self.pj_ui.put({'pjoy report': pj_report})
 
         try:
             while not kbhit() and self.device.is_plugged():
@@ -586,7 +610,7 @@ class Outputter(Process):
                 time.sleep(0.5)
             return
         except Exception as e:
-            self.q3.put({'error': e})
+            self.pj_ui.put({'error': e})
             # print("692: ", e)
 
         self.device.close()
@@ -601,7 +625,7 @@ class Outputter(Process):
 
         # print("value: {}, event: {}".format(value, event))
         if self.raw_out == True:
-            self.q3.put({'raw': "[Event: {}, Value: {}]\n".format(event, value), 'joy': 'pjoy'})
+            self.pj_ui.put({'raw': "[Event: {}, Value: {}]\n".format(event, value), 'joy': 'pjoy'})
             return
 
         lait = self.last_action_info["time"]
@@ -617,19 +641,19 @@ class Outputter(Process):
 
         if type_ == 'hat switch':
             try:
-                action = vals_[value]
+                act = vals_[value]
             except Exception as e:
-                self.q3.put({'error': "No hat switch value was found for {}.".format(e)})
+                self.pj_ui.put({'error': "No hat switch value was found for {}.".format(e)})
                 return
 
-            pressed = 1 if action != 'la_n' else 0
+            pressed = 1 if act != 'la_n' else 0
 
 
         else:
             try:
-                action = vals_[::-1][value]
+                act = vals_[::-1][value]
             except Exception as e:
-                self.q3.put({'error': "No button value was found for {}.".format(e)})
+                self.pj_ui.put({'error': "No button value was found for {}.".format(e)})
                 return
             pressed = value
 
@@ -638,14 +662,14 @@ class Outputter(Process):
         if time_bw_events > 0.7 and pressed == 1:
             startover = True
             time_bw_events = 0
-            action = "]\n['{}'".format(action)
+            action = "]\n['{}'".format(act)
         else:
             startover = False
-            action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), action)
+            action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
 
 
-        info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy'}
+        info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'func': act}
 
-        self.q3.put(info)
+        self.pj_ui.put(info)
 
         self.last_action_info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'value': value, 'tmark': now}

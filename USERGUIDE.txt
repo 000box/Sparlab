@@ -1,33 +1,46 @@
 ﻿Sparlab User Guide
 
 
-Version: 1.0.5
+Version: 1.0.6
 
+
+Application:
+- Observe simulated scenarios
+- See if certain combos are possible
+- Create bot to train against
+- Invent signature combos
+- Mimic optimized findings with your own controller.
 
 Features:
 
-Virtual Joystick (VJoy):
+Virtual Joystick (VJ1, VJ2):
 -installable driver to your PC.
 -Steam compatible.
+-2 are built in for simulating player 1 and 2
 
-Physical Joystick (PJoy):
--The device you use to train.
+Physical Joystick (PJ1):
+-The device you personally use
 -You can use an Arcade Stick, XBOX Controller, or Keyboard.
 
 Action Editor:
 -Home for all of your Actions.
--Each action can have a notation, hotkey, and string.
+-Each action can have a notation and string.
 
-Script:
--converts notation to its matching string of functions when you press Play.
+VJ1/VJ2 Script:
+-converts notation to its matching string of functions upon simulation.
 
-Log: record and log your outputs.
--Output from both devices is displayed in real-time.
--You can also save the output to a log file.
+Simulations:
+-Notation can be simulated in both scripts by looping it (runs until Stop is pressed) or
+by playing it once.
+
+VJ1/VJ2 Log:
+-Notation from script(s) that is converted to input is output in String or Raw format. (See Action Editor below)
+
+PJ1 Log:
+-Output from your own controller that is converted to String or Raw format.
 
 
 Installation:
-
 
 1) Go inside driver folder and look for 5 files: 'devcon', 'scpvbus', 'ScpVBus', 'ScpVBus.sys', and 'WdfCoinstaller01009.dll'.
 	Once you see this, right-click the name of the folder in the folder title bar above the files. Select 'Copy address'
@@ -47,7 +60,7 @@ Installation:
 
 1) Launch the Sparlab app, then go to > Steam Client > Big Picture Mode > Settings > Controller Settings
 
-2) When you toggle your joy state, something like 'Xbox 360 Controller_1' should show up. Make sure 'Xbox Configuration Support' is checked for that controller
+2) When you turn your vjoy on, you should see a popup showing that a new device has been found. Go through that setup.
 
 3) Make sure your VJoy is mapped with the bindings in your game's settings. You can use the VJoy's Hotkeys (HK details listed under Action Editor) to achieve that.
 
@@ -85,20 +98,12 @@ See Troubleshooting at the bottom of this guide if you are having any issues.
 Below are descriptions for each settings:
 
 'Action Files: These APPDATA files are where your actions are imported from.
-'fps: Manipulates the time length used by the 'j_f' function
 'default direction: Can be 'R' or 'L'.
-'play hotkey: Toggles b/w Play and Pause
-'flip x axis hotkey: When flipped, any analog value with a non-zero x value is flipped.
-'virtual joy port: The 'port' where your virtual joystick plugs into. Can be 1,2,3 or 4.
 'physical joy type: Can be 'arcade stick', 'xbox', 'keyboard', or 'None'.
 'Delay Variables: These are for inserting into your script/action strings to simulate delay.
-'virtual joy text color: The color of this joy\'s outfeed text.
-'physical joy text color: The color of this joy\'s outfeed text.
-'virtual joy type: This setting must be equal to 'xbox' for now.
-
 'analog configs: 'x fix' & 'y fix' are the configs used by your vjoy. 'x min','x max','y min', & 'y max' are used by your pjoy in order to categorize its analog states.
 'button configs: Mapping of buttons to ('press function', 'release function'). Arcade Stick Only: Must have valid vendor ID. All buttons have a valid page ID, each button must have a valid usage ID. \
-Hat switch must have one valid usage id. You can find this information by viewing your Device Report (In tools) ,
+Hat switch must have one valid usage id. You can find this information by viewing your Device Report (In Help) ,
 
 Action Editor:
 
@@ -110,8 +115,8 @@ Each action has its own Name (e.g. 'double dash'), Notation (e.g. 'dd'), Hotkey 
 
 Examples of correctly formatted actions:
 
-'right punch:			{'Notation': '2', 'Hotkey': 'None', 'String': ['y_d', 'delay(0.020)', 'y_u']},
-'start:			{'Notation': 'None', 'Hotkey': '`', 'String': ['start_d', 'delay(0.020)', 'start_u']}
+'right punch:			{'Notation': '2', 'String': ['y_d', 'delay(0.020)', 'y_u']},
+'start:			{'Notation': 'None', 'String': ['start_d', 'delay(0.020)', 'start_u']}
 
 
 Functions for building strings:
@@ -154,6 +159,10 @@ x_u : x button release
 x_d : x button press
 y_u : y button release
 y_d : y button press
+ls_u: left stick release
+ls_d : left stick press
+rs_u: right stick release
+rs_d : right stick press
 rb_u : rb button release
 rb_d : rb button press
 rt_u : rt button release
@@ -167,23 +176,11 @@ start_d : start button press
 back_u : back button release
 back_d : back button press
 
-'delay(t)': Hold for t seconds ('delay(1.123)' means delay for 1.123 seconds)
-
-
-Hotkeys:
-
-These are useful for testing your newly created Actions or if you need to navigate around a menu with your VJoy.
-
-Syntax Rules:
--Hotkeys must be surrounded by quotations. (e.g 'h+k', "space", 'u')
--Each key for your hotkey must be separated by a '+' if you want to apply multiple keys. (e.g. 'space+u', 'shift+/+.')
--If you want to use '\' as a hotkey, it has to be listed like this: '\\'
--If you want to use a single quotation, it has to be listed like this: "'" (cannot be ''')
-
+'delay(t)': Hold for t seconds ('delay(1.123)' means delay for 1.123 seconds, 'delay(dv1)' means delay for 1 second IF dv1 = 0.1000 seconds)
 
 Notation:
 
-A notation is a variable representing an Action you want to be played in your script, which means that the Action being represented MUST have a valid String attached with it.
+A notation is a variable representing an Action you want to be played in your VJ1/VJ2 script(s), which means that the Action being represented MUST have a valid String attached with it.
 
 Syntax Rules: In Action Editor, Notations must be surrounded by quotations (e.g 'd/f', "u/r", '1')
 
@@ -216,7 +213,7 @@ This feature changes a delay variable FOR YOU while your script is playing.
 
 Var.: Variable to adjust during Script Play
 Val.: amount of adjustment
-Freq.: adjust every N script play throughs
+Freq.: adjust every N simulations.
 
 
 In-app commands:
@@ -225,11 +222,8 @@ Clear: removes all text in your Log.
 View Raw: converts new string output to its raw format.
 Disable Log: Disables output display in log.
 Delay Variables: these can be inserted into your script to simulate delay (in seconds).
-Enable HKs: turns on the hotkeys you have defined in your Action Editor.
 Flip X Axis: switches the directions of all functions that have an X Direction (e.g. 'dpr_d' --> 'dpl_d', 'la_dl' --> 'la_dr').
 Turn VJoy On: plugs in your VJoy Device.
-Refresh: re-commits your settings. This is useful if you are changing devices.
-Save Log: saves all the
 
 
 Troubleshooting:
