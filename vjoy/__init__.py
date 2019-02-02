@@ -84,7 +84,7 @@ class VXBOX_Device(object):
             return time.time()
 
     def rb_u(self, cfg, flipx=None):
-        result = vj.SetBtnLB(self.id, False)
+        result = vj.SetBtnRB(self.id, False)
         if result == False:
             return False
         else:
