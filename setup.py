@@ -23,7 +23,7 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(  name = "Sparlab",
-        version = "1.0.61",
+        version = "1.0.62",
         description = "Sparlab",
         author = "John Ward",
         options = {"build_exe": build_exe_options},

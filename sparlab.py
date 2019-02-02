@@ -18,7 +18,7 @@ import sys
 from datetime import datetime
 import hook.hid as hid
 
-__version__ = '1.0.61'
+__version__ = '1.0.62'
 
 DATAPATH = '%s\\Sparlab\\%s' %  (os.environ['APPDATA'], __version__)
 LOGPATH = DATAPATH + "\\logs"
