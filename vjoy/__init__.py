@@ -207,7 +207,7 @@ class VXBOX_Device(object):
 
     def dpr_d(self, cfg, flipx=None):
         if flipx == True:
-            result = vj.SetDpadLeft(self.id)
+            result = vj.SetDpadRight(self.id)
         else:
             result = vj.SetDpadRight(self.id)
 
@@ -225,7 +225,7 @@ class VXBOX_Device(object):
 
     def dpl_d(self, cfg, flipx=None):
         if flipx == True:
-            result = vj.SetDpadRight(self.id)
+            result = vj.SetDpadLeft(self.id)
         else:
             result = vj.SetDpadLeft(self.id)
         if result == False:
