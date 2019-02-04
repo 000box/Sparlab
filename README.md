@@ -29,10 +29,10 @@ Requirements:
 cx_Freeze
 
 Executable:
-In powershell inside the __main__ directory, enter 'python .\setup.py build' to the command line.
+'python .\setup.py build'  
 
 Distributable:
-In powershell inside the __main__ directory, enter 'python .\setup.py bdist_msi' to the command line. 
+'python .\setup.py bdist_msi'
 
 
 
