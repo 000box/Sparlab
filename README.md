@@ -1,6 +1,6 @@
 # Sparlab
 
-Sparlab is an open source training platform for all fighting gamers. 
+Sparlab is an open source training tool that allows fighting gamers to simulate game scenarios and discover new combos.
 
 Features:
 
