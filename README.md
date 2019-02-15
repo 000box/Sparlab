@@ -2,16 +2,33 @@
 
 https://www.youtube.com/watch?v=XKNUhKUnYeE
 
-Sparlab is an open source training tool that allows fighting gamers to simulate game scenarios and discover new combos.
+Sparlab is a desktop software tool that allows fighting gamers to read game memory, simulate game scenarios, and discover new combos while training.
 
 Features:
 
+TekkenBot Frame Reader Integration
 Two Steam-compatible Virtual Joysticks for simulating input.
 Key logger compatible with keyboards, xbox controllers, and arcade sticks. 
 Action Editor for customizing action libraries. 
 Adjustable Delay Variables for simulating delay b/w inputs. 
 Auto Adjustment: increase/decrease delay variable during Simulation. 
 And more. 
+
+
+Developers: we welcome your contributions!
+
+Problems we need help with:
+
+1) Synchronized inputs with internal game counter (see Issues) 
+2) Sparlab API to make use of collected data
+  - Reinforcement Learning Functionality for integrating AI bots and finding most optimal future of any given game state.
+  - Performance tracking based on hitboxes, health, and other factors
+3) Libraries for fighting games besides Tekken
+  - Could TekkenBot be scaled to work for other games?
+4) Adaptation for other devices & consoles
+  - PS3/PS4 controller wrapper is needed. 
+  - Sparlab only works on PC, how can we get it to work on XBOX, PS4, and other consoles? 
+5) User-friendly Settings & Action Editor interfaces 
 
 
 How to run from Command Line: 
