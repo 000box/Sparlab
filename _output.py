@@ -21,7 +21,7 @@ class Outputter(Process):
         self.pj_ui, self.ui_pj, self.joy_type, hid_out_fullpath = args
         # queue for getting info from 1st process
         self.last_action_info = {'start over': True, 'action': 'None', 'type': 0, 'time': 0, 'joy': 'pjoy', 'value': (0, 0), 'tmark': time.clock()}
-        self.raw_out = False
+        self.outtype = 'String'
 
         with open(hid_out_fullpath, "w") as f:
             self.send_hid_report(f)
@@ -36,7 +36,7 @@ class Outputter(Process):
         try:
             hid.core.show_hids(output = outfile)
         except Exception as e:
-            print("HID Error: ", e)
+            # print("HID Error: ", e)
             self.pj_ui.put({'warning': 'HID information was not able to be sent to your Device Report.'})
 
 
@@ -51,10 +51,6 @@ class Outputter(Process):
         else:
             # physical joystick
             self.pjoy = self.joys[0]
-            # print('using %d' % self.pjoy.device_number)
-            battery = self.pjoy.get_battery_information()
-            # virtual joystick (temp)
-            # self.vjoy = self.joys[0]
             self.last_action_info = {'start over': True, 'action': 'None', 'type': 0, 'time': 0, 'joy': 'pjoy', 'value': (0, 0), 'tmark': time.clock()}
 
 
@@ -95,10 +91,6 @@ class Outputter(Process):
                     # except Exception as e:
                     #     print("HKS ENABLED OUT ERROR: ", e)
                     #     self.pj_ui.put({'error': e})
-                    try:
-                        self.raw_out = info['raw output']
-                    except KeyError as e:
-                        pass
 
                     try:
                         if init == True:
@@ -153,9 +145,10 @@ class Outputter(Process):
                                         self.none_process()
 
                     except KeyError as e:
-                        print("keyerror: ", e)
+                        # print("keyerror: ", e)
+                        pass
                     except Exception as e:
-                        print("SETTINGS (out): ", e)
+                        # print("SETTINGS (out): ", e)
                         self.pj_ui.put({'error': e})
                         # pass
 
@@ -204,9 +197,8 @@ class Outputter(Process):
             oppo = 1 if pressed == 0 else 0
             time_bw_events = now - self.last_tmark
             #print('button', button, pressed)
-            if self.raw_out == True:
-                self.pj_ui.put({'raw': "[event: {}, value: {}]\n".format(button, pressed), 'joy': 'pjoy'})
-                return
+
+            raw = "[event: {}, value: {}]\n".format(button, pressed)
 
             act = self.button_vals['xbox'][button][::-1][pressed]
 
@@ -228,7 +220,7 @@ class Outputter(Process):
                         self.pressed.append(button)
                     else:
                         dontq = True
-                        print("top else: self.pressed = ", self.pressed)
+                        # print("top else: self.pressed = ", self.pressed)
                 else:
                     startover = False
                     if pressed == 0:
@@ -240,15 +232,15 @@ class Outputter(Process):
                                 action = ",'{}'".format(act)
 
                         except ValueError:
-                            print("value error under except: self.pressed = ", self.pressed)
+                            # print("value error under except: self.pressed = ", self.pressed)
                             dontq = True
                     else:
-                        print("dontq under else: self.pressed = ", self.pressed)
+                        # print("dontq under else: self.pressed = ", self.pressed)
                         dontq = True
 
 
                 if not dontq:
-                    info = {'start over': startover, 'action': action, 'joy': 'pjoy', 'func': act}
+                    info = {'start over': startover, 'action': action, 'joy': 'pjoy', 'func': act, 'raw': raw}
                     self.pj_ui.put(info)
 
                     self.last_tmark = now
@@ -263,10 +255,10 @@ class Outputter(Process):
 
             time_bw_events = now - self.last_tmark
 
-            if self.raw_out == True:
-                value = str((value[0] * 65536, value[1] * 65536))
-                self.pj_ui.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'pjoy'})
-                return
+
+            val = str((value[0] * 65536, value[1] * 65536))
+
+            raw = "[event: {}, value: {}]\n".format(axis, val)
 
             if axis not in ['lt', 'rt']:
                 act = self.get_stick_dir(axis, value)
@@ -347,7 +339,7 @@ class Outputter(Process):
                 if dontq:
                     return
 
-                info = {'start over': startover, 'action': action, 'joy': 'pjoy', 'func': act}
+                info = {'start over': startover, 'action': action, 'joy': 'pjoy', 'func': act, 'raw': raw}
 
                 self.pj_ui.put(info)
                 self.last_tmark = now
@@ -397,19 +389,17 @@ class Outputter(Process):
                         action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
 
 
-                    if self.raw_out:
-                        self.pj_ui.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
-                        return
-
+                    raw = "[event: {}, value: {}]\n".format(k, value)
+                    # print("RAW DOWN: ", raw)
                     if act not in self.pressed:
-                        info = {'joy': 'pjoy', 'action': action, 'start over': startover, 'func': act}
-                        print("put press to q3")
+                        info = {'joy': 'pjoy', 'action': action, 'start over': startover, 'func': act, 'raw': raw}
+                        # print("put press to q3")
                         self.pj_ui.put(info)
                         self.last_tmark = now
                         self.pressed.append(act)
                 except Exception as e:
-                    print("error ({}) ; key ({})".format(e, k))
-
+                    # print("error ({}) ; key ({})".format(e, k))
+                    pass
 
 
         def on_release(key):
@@ -431,11 +421,9 @@ class Outputter(Process):
 
                 action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
 
-                if self.raw_out:
-                    self.pj_ui.put({'raw': "[event: {}, value: {}]\n".format(k, value)})
-                    return
-
-                info = {'joy': 'pjoy', 'action': action, 'start over': startover, 'func': act}
+                raw = "[event: {}, value: {}]\n".format(k, value)
+                # print("RAW UP: ", raw)
+                info = {'joy': 'pjoy', 'action': action, 'start over': startover, 'func': act, 'raw': raw}
                 self.pj_ui.put(info)
                 self.last_value = value
                 self.last_tmark = now
@@ -452,7 +440,7 @@ class Outputter(Process):
                 break
             except AttributeError:
                 time.sleep(0.1)
-                print("waiting on settings...")
+                # print("waiting on settings...")
 
         self.pressed = []
         self.last_value = 0
@@ -527,7 +515,7 @@ class Outputter(Process):
             self.pj_ui.put({'pjoy report': pj_report})
             self.none_process()
         except Exception as e:
-            print("error: ", e)
+            # print("error: ", e)
             self.pj_ui.put({'error': 'An error occurred when attempting to point to a device with vendor id "{}". This might be happening because your device is not plugged in.'.format(vID)})
             self.joy_type = "None"
             self.settings['physical joy type'] = self.joy_type
@@ -624,9 +612,8 @@ class Outputter(Process):
         #         nothing = None
 
         # print("value: {}, event: {}".format(value, event))
-        if self.raw_out == True:
-            self.pj_ui.put({'raw': "[Event: {}, Value: {}]\n".format(event, value), 'joy': 'pjoy'})
-            return
+
+        raw = "[Event: {}, Value: {}]\n".format(event, value)
 
         lait = self.last_action_info["time"]
         laia = self.last_action_info["action"]
@@ -668,7 +655,7 @@ class Outputter(Process):
             action = ",'delay({})','{}'".format(round(time_bw_events, self.dv_digits), act)
 
 
-        info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'func': act}
+        info = {'start over': startover, 'action': action, 'type': pressed, 'time': time_bw_events, 'joy': 'pjoy', 'func': act, 'raw': raw}
 
         self.pj_ui.put(info)
 

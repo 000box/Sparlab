@@ -13,7 +13,7 @@ class Inputter(multiprocessing.Process):
         super().__init__(target=self.vjoy_process)
         # queue for getting info from 1st process
 
-        self.ui_vj, self.vj_ui, self.me_opp, self.opp_me, self.joy_n, self.is_opponent = args
+        self.ui_vj, self.vj_ui, self.joy_n = args
         # is_opponent can be True or False, this is the vjoy for the user's opponent character
 
 
@@ -22,10 +22,9 @@ class Inputter(multiprocessing.Process):
         self.vjoy_on = False
         self.hks_enabled = False
         self.rest = True
-        self.raw_out = False
+        self.outtype = False
         self.listener = None
         self.pressed = []
-        self.all_playing = False
         # ignore action interval (set to False at end of loops)
         # self.iai = False
         #holds all hotkeys
@@ -61,54 +60,40 @@ class Inputter(multiprocessing.Process):
                 info = self.ui_vj.get(0)
                 if info is not None:
                     try:
-                        newcontact = info['new contact']
-                        vjslen = len(list(self.me_opp)) + 1
-                        self.me_opp[vjslen] = newcontact
-                    except KeyError:
-                        pass
-                    try:
-                        newmailman = info['new mailman']
-                        vjslen = len(list(self.opp_me)) + 1
-                        self.opp_me[vjslen] = newmailman
-                    except KeyError:
-                        pass
-                    try:
                         self.actlist = info['actlist']
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD FUCKING ERROR 80")
+                        # print("SOME WEIRD FUCKING ERROR 80")
                         self.vj_ui.put({'error': e})
                     try:
-                        self.raw_out = info['raw output']
+                        self.outtype = info['outputtype']
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD FUCKING ERROR 87")
+                        # print("SOME WEIRD FUCKING ERROR 87")
                         self.vj_ui.put({'error': e})
                     try:
                         self.act_cfg = info['actcfg']
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD FUCKING ERROR 94")
+                        # print("SOME WEIRD FUCKING ERROR 94")
                         self.vj_ui.put({'error': e})
 
                     try:
                         playing = info['playing']
-                        both = info['both']
                         if playing != self.playing:
                             self.rep = 0
-                            self.all_playing = both
                         self.playing = playing
                         self.playing_once = info['once']
-                        print("ONCE? ", info['once'])
+                        # print("ONCE? ", info['once'])
 
                         self.refresh(playing=True)
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD FUCKING ERROR 119")
+                        # print("SOME WEIRD FUCKING ERROR 119")
                         self.vj_ui.put({'error': e})
                     try:
                         n = int(info['joy'])
@@ -116,7 +101,7 @@ class Inputter(multiprocessing.Process):
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD ERROR 127")
+                        # print("SOME WEIRD ERROR 127")
                         self.vj_ui.put({'error': e})
                     try:
                         self.settings = info['settings']
@@ -124,14 +109,14 @@ class Inputter(multiprocessing.Process):
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD ERROR 136")
+                        # print("SOME WEIRD ERROR 136")
                         self.vj_ui.put({'error': e})
                     try:
                         self.custom_delays = info['delay vars']
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD ERROR 146")
+                        # print("SOME WEIRD ERROR 146")
                         self.vj_ui.put({'error': e})
                     try:
                         self.vjoy_on = info['vjoy on']
@@ -139,14 +124,15 @@ class Inputter(multiprocessing.Process):
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD ERROR 155")
+                        # print("SOME WEIRD ERROR 155")
                         self.vj_ui.put({'error': e})
                     try:
                         self.facing = info['facing']
+                        # print("FACING.. {}".format(self.facing))
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD ERROR 162")
+                        # print("SOME WEIRD ERROR 162")
                         self.vj_ui.put({'error': e})
                     try:
                         _ = info['refresh']
@@ -154,7 +140,7 @@ class Inputter(multiprocessing.Process):
                     except KeyError as e:
                         pass
                     except Exception as e:
-                        print("SOME WEIRD ERROR 170")
+                        # print("SOME WEIRD ERROR 170")
                         self.vj_ui.put({'error', e})
                     try:
                         if info['vjoy on'] == True:
@@ -194,21 +180,19 @@ class Inputter(multiprocessing.Process):
 
         elif playing:
             if self.playing:
-                print("REFRESH PLAYING")
+                # print("REFRESH PLAYING")
                 self.rest = False
                 self.strings = self.actlist
             else:
-                print("HUH")
+                # print("HUH")
                 self.rest = True
                 self.strings = []
             self.client_informed = True
 
 
         elif settings:
-            if not self.is_opponent:
-                self.defaultdir = self.settings['default direction']
-            else:
-                self.defaultdir = 'R' if self.settings['default direction'] == 'L' else 'L'
+            self.defaultdir = self.settings['default direction']
+
 
     def update_queue(self, info):
         if self.running == False:
@@ -230,7 +214,6 @@ class Inputter(multiprocessing.Process):
                 if self.playing_once:
                     self.playing = False
                     self.playing_once = False
-                    self.all_playing = False
                     self.vj_ui.put({'playing': False})
                 self.rep += 1
             # check for msg from client every 0.2 seconds
@@ -264,39 +247,34 @@ class Inputter(multiprocessing.Process):
             try:
                 for iter, a in enumerate(iterstring):
                     # print("a: ", a)
-                    if self.raw_out:
-                        if a in ['la_r', 'la_dr', 'la_d', 'la_dl', 'la_l', 'la_ul', 'la_u', 'la_ur', 'la_n']:
-                            axis = 'la'
-                            value = (self.settings['analog configs'][a]['x fix'], self.settings['analog configs'][a]['y fix'])
-                            self.vj_ui.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'vjoy', 'rep': iter})
 
-                        elif a in ['ra_r', 'ra_dr', 'ra_d', 'ra_dl', 'ra_l', 'ra_ul', 'ra_u', 'ra_ur', 'ra_n']:
-                            axis = 'ra'
-                            value = (self.settings['analog configs'][a]['x fix'], self.settings['analog configs'][a]['y fix'])
-                            self.vj_ui.put({'raw': "[event: {}, value: {}]\n".format(axis, value), 'joy': 'vjoy', 'rep': iter})
+                    if a in ['la_r', 'la_dr', 'la_d', 'la_dl', 'la_l', 'la_ul', 'la_u', 'la_ur', 'la_n']:
+                        button = 'la'
+                        value = (self.settings['analog configs'][a]['x fix'], self.settings['analog configs'][a]['y fix'])
 
-                        elif a in ['a_d','b_d','x_d','y_d','rt_d','lt_d','rb_d','lb_d',
-                                    'dpu_d','dpr_d','dpd_d','dpl_d','start_d','back_d',
-                                    'a_u','b_u','x_u','y_u','rt_u','lt_u','rb_u','lb_u',
-                                    'dpu_u','dpr_u','dpd_u','dpl_u','start_u','back_u']:
-                            for btn, down_up_pair in self.settings['button configs']['xbox'].items():
-                                d, u = down_up_pair
-                                if d == a:
-                                    value = 1
-                                    button = btn
-                                    break
-                                elif u == a:
-                                    value = 0
-                                    button = btn
-                                    break
+                    elif a in ['ra_r', 'ra_dr', 'ra_d', 'ra_dl', 'ra_l', 'ra_ul', 'ra_u', 'ra_ur', 'ra_n']:
+                        button = 'ra'
+                        value = (self.settings['analog configs'][a]['x fix'], self.settings['analog configs'][a]['y fix'])
 
-                            try:
-                                self.vj_ui.put({'raw': "[event: {}, value: {}]\n".format(button, value), 'joy': 'vjoy', 'rep': iter})
+                    elif a in ['a_d','b_d','x_d','y_d','rt_d','lt_d','rb_d','lb_d',
+                                'dpu_d','dpr_d','dpd_d','dpl_d','start_d','back_d',
+                                'a_u','b_u','x_u','y_u','rt_u','lt_u','rb_u','lb_u',
+                                'dpu_u','dpr_u','dpd_u','dpl_u','start_u','back_u']:
+                        for btn, down_up_pair in self.settings['button configs']['xbox'].items():
+                            d, u = down_up_pair
+                            if d == a:
+                                value = 1
+                                button = btn
+                                break
+                            elif u == a:
+                                value = 0
+                                button = btn
+                                break
+                    else:
+                        button = a
+                        value = 0
 
-                            except Exception as e:
-                                self.vj_ui.put({'error': "an error ({}) occurred while converting string item ({}) to its raw form.".format(e, a)})
-
-
+                    raw = "[event: {}, value: {}]\n".format(button, value)
                     if ind > 0:
                         info = {'start over': False, 'action': ',', 'type': 0, 'time': 0, 'joy': 'vjoy', 'user input': (notation, string)}
                         self.update_queue(info)
@@ -338,9 +316,9 @@ class Inputter(multiprocessing.Process):
                         cfg = None
 
                     if self.rest == False and combine == False and string2 == False:
-                        print("exec: ", str(a))
+                        # print("exec: ", str(a))
                         ts = getattr(self.joy, str(a))(cfg, flipx=flipx)
-                        print("ts: ", ts)
+                        # print("ts: ", ts)
 
                     elif self.rest == False and combine == True:
                         ts = self.joy.combine(bin)
@@ -362,10 +340,9 @@ class Inputter(multiprocessing.Process):
                     if a in list(flips) and flipx == True:
                         a = flips[a]
 
-                    info = {'start over': False, 'action': "'{}'".format(a), 'type': type, 'time': 0.1, 'joy': 'vjoy'}
+                    info = {'start over': False, 'action': "'{}'".format(a), 'type': type, 'time': 0.1, 'joy': 'vjoy', 'raw': raw}
 
-                    if not self.raw_out:
-                        self.update_queue(info)
+                    self.update_queue(info)
 
 
 

@@ -2,7 +2,11 @@ import os
 from time import clock
 import csv
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+import TekkenBot
+from TekkenBot import GUI_TekkenBotPrime as TEKKENBOT
+import sys
+
 
 """ Future version? notebook library to replace ttk.Notebook inside Action Editor, you can resize frames with it
 import Pmw as pmw"""
@@ -96,7 +100,7 @@ DEFAULT_SETTINGS = {
                                             'y max':	13107}},
 
                     'Delay Variables': ['dv1','dv2'],
-                    'delay variable # of decimals': 4,
+                    'delay variable # of decimals': 3,
                     'button configs':
                                         {'xbox':
                                                 {1: ('dpu_d', 'dpu_u'), 2: ('dpd_d', 'dpd_u'), 3: ('dpl_d', 'dpl_u'), 4: ('dpr_d', 'dpr_u'), 5: ('start_d', 'start_u'),
@@ -122,76 +126,12 @@ DEFAULT_SETTINGS = {
                                                                                                                                     7: 'la_ul', 15: 'la_n'}}}},
 
 
+
+                    'game': 'TEKKEN 7',
                     'Action Files': ['ae_default.txt', 'ae_tekken.txt', 'ae_soulcalibur.txt'],
                     'physical joy type': 'keyboard'}
                     # 'outfeed max characters': 400,}
                     # 'default neutral allowance': 0.7}
-
-
-# So user can navigate around menu
-# DEFAULT_ACTIONS = {'filename': 'ae_default.txt',
-#                     'include': True,
-#                     'action config':
-#                                     { 'A': {'Notation': 'A', 'Hotkey': 'space+a', 'String': ['a_d', 'delay(0.015)', 'a_u']},
-#                                         'B': {'Notation': 'B', 'Hotkey': 'space+b', 'String': ['b_d', 'delay(0.015)', 'b_u']},
-#                                         'X': {'Notation': 'X', 'Hotkey': 'space+x', 'String': ['x_d', 'delay(0.015)', 'x_u']},
-#                                         'Y': {'Notation': 'Y', 'Hotkey': 'space+y', 'String': ['y_d', 'delay(0.015)', 'y_u']},
-#                                         'Start': {'Notation': 'None', 'Hotkey': 's+t', 'String': ['start_d', 'delay(0.015)', 'start_u']},
-#                                         'Back': {'Notation': 'None', 'Hotkey': 'b+k', 'String': ['back_d','delay(0.015)','back_u']},
-#                                         'RT': {'Notation': 'RT', 'Hotkey': 'r+t', 'String': ['rt_d', 'delay(0.015)', 'rt_u']},
-#                                         'LT': {'Notation': 'LT', 'Hotkey': 'l+t', 'String': ['lt_d', 'delay(0.015)', 'lt_u']},
-#                                         'LB': {'Notation': 'LB', 'Hotkey': 'l+b', 'String': ['lb_d', 'delay(0.015)', 'lb_u']},
-#                                         'RB': {'Notation': 'RB', 'Hotkey': 'r+b', 'String': ['rb_d', 'delay(0.015)', 'rb_u']},
-#                                         'DPU': {'Notation': 'DPU', 'Hotkey': 'd+p+u', 'String': ['dpu_d', 'delay(0.015)', 'dpu_u']},
-#                                         'DPR': {'Notation': 'DPR', 'Hotkey': 'd+p+r', 'String': ['dpr_d', 'delay(0.015)', 'dpr_u']},
-#                                         'DPL': {'Notation': 'DPL', 'Hotkey': 'd+p+l', 'String': ['dpl_d', 'delay(0.015)', 'dpl_u']},
-#                                         'DPD': {'Notation': 'DPD', 'Hotkey': 'd+p+space', 'String': ['dpd_d', 'delay(0.015)', 'dpd_u']}}
-#
-#                     }
-#
-# TEKKEN_ACTIONS = {'filename': "ae_tekken.txt",
-#                     'include': False,
-#                     'action config':
-#                                     { 'left punch': {'Notation': '1',  'String': ['x_d', 'delay(0.015)', 'x_u']},
-#                                     'right kick': {'Notation': '3',  'String': ['b_d', 'delay(0.015)', 'b_u']},
-#                                     'left kick': {'Notation': '4', 'Hotkey': 'l+p', 'String': ['a_d', 'delay(0.015)', 'a_u']},
-#                                     'right punch': {'Notation': '2',  'String': ['y_d', 'delay(0.015)', 'y_u']},
-#                                     'right punch': {'Notation': '2',  'String': ['y_d', 'delay(0.015)', 'y_u']},
-#                                     'forward': {'Notation': 'f',  'String': ['la_r', 'delay(0.030)', 'la_n']},
-#                                     'backward': {'Notation': 'b',  'String': ['la_l', 'delay(0.030)', 'la_n']},
-#                                     'down-forward': {'Notation': 'd/f',  'String': ['la_dr', 'delay(0.015)', 'la_n']},
-#                                     'up-forward': {'Notation': 'u/f',  'String': ['la_ur', 'delay(0.015)', 'la_n']},
-#                                     'down-backward': {'Notation': 'd/b',  'String': ['la_dl', 'delay(0.015)', 'la_n']},
-#                                     'up-backward': {'Notation': 'u/b',  'String': ['la_ul', 'delay(0.015)', 'la_n']},
-#                                     'backward': {'Notation': 'b',  'String': ['la_l', 'delay(0.030)', 'la_n']},
-#                                     'crouch': {'Notation': 'u',  'String': ['la_d', 'delay(0.030)', 'la_n']},
-#                                     'jump': {'Notation': 'd',  'String': ['la_u', 'delay(0.030)', 'la_n']},
-#                                     'back-2 combo': {'Notation': 'b+2',  'String': ['la_l', 'y_d', 'delay(0.015)', 'neutral']},
-#                                     'Crouch-Dash': {'Notation': 'cd',  'String': ['la_r','delay(0.02)', 'la_n', 'delay(0.02)', 'la_d', 'delay(0.02)', 'la_dr', 'delay(0.015)']}}
-#                 }
-#
-#
-# SOULCALIBUR_ACTIONS = {'filename': "ae_soulcalibur.txt",
-#                         'include': False,
-#                         'action config':
-#                                         { 'A': {'Notation': 'A',  'String': ['x_d', 'delay(0.015)', 'x_u']},
-#                                         'K': {'Notation': 'K',  'String': ['b_d', 'delay(0.015)', 'b_u']},
-#                                         'G': {'Notation': 'G',  'String': ['a_d', 'delay(0.015)', 'a_u']},
-#                                         'B': {'Notation': 'B',  'String': ['y_d', 'delay(0.015)', 'y_u']},
-#                                         'A+G': {'Notation': 'A+G',  'String': ['lt_d', 'delay(0.015)', 'lt_u']},
-#                                         'A+B': {'Notation': 'A+B',  'String': ['lb_d', 'delay(0.015)', 'lb_u']},
-#                                         'B+G': {'Notation': 'B+G',  'String': ['rb_d', 'delay(0.015)', 'rb_u']},
-#                                         'A+B+K': {'Notation': 'A+B+K',  'String': ['rt_d', 'delay(0.015)', 'rt_u']},
-#                                         'forward': {'Notation': '6',  'String': ['la_r', 'delay(0.030)', 'la_n']},
-#                                         'backward': {'Notation': '4',  'String': ['la_l', 'delay(0.030)', 'la_n']},
-#                                         'down-forward': {'Notation': '3',  'String': ['la_dr', 'delay(0.015)', 'la_n']},
-#                                         'up-forward': {'Notation': '9',  'String': ['la_ur', 'delay(0.015)', 'la_n']},
-#                                         'down-backward': {'Notation': '1',  'String': ['la_dl', 'delay(0.015)', 'la_n']},
-#                                         'up-backward': {'Notation': '7',  'String': ['la_ul', 'delay(0.015)', 'la_n']},
-#                                         'backward': {'Notation': '4',  'String': ['la_l', 'delay(0.030)', 'la_n']},
-#                                         'crouch': {'Notation': '2',  'String': ['la_d', 'delay(0.030)', 'la_n']},
-#                                         'jump': {'Notation': '8',  'String': ['la_u', 'delay(0.030)', 'la_n']}}
-#                         }
 
 DEFAULT_ACTIONS = {'filename': 'ae_default.txt',
                     'include': True,
@@ -257,38 +197,6 @@ SOULCALIBUR_ACTIONS = {'filename': "ae_soulcalibur.txt",
                                         'jump': {'Notation': '8',  'String': ['la_u', 'delay(0.030)', 'la_n']}}
                         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 """
 # Next Version
 
@@ -306,9 +214,9 @@ SOULCALIBUR_ACTIONS = {'filename': "ae_soulcalibur.txt",
 CATEGORIES = {
                 'General': {
                             'Action Files': {'type': 'list', 'Description': 'These APPDATA files are where your actions are imported from'},
-                            'fps':  {'type': 'int', 'Description': 'Manipulates the time length used by the "j_f" function'},
                             # 'Fixed Delay': {'type': 'float', 'Description': 'Delay between every action inside your script'},
                             # 'Start Delay': {'type': 'float', 'Description': 'Delay before the 1st action in your script plays'},
+                            'game': {'type': 'str', 'Description': "Can be 'Tekken 7' or 'None'"},
                             'default direction': {'type': 'str', 'Description': 'Can be "R" or "L".'},
                             'play hotkey': {'type': 'str', 'Description': 'Toggles b/w Play and Pause'},
                             'flip x axis hotkey': {'type': 'str', 'Description': 'When flipped, any analog value with a non-zero x value is flipped.'},
@@ -316,9 +224,6 @@ CATEGORIES = {
                             'physical joy type': {'type': 'str', 'Description': 'Can be "arcade stick", "xbox", or "keyboard".'},
                             'Delay Variables': {'type': 'list', 'Description': 'These are for inserting into your script/action strings to simulate delay.'},
                             'delay variable # of decimals': {'type': 'int', 'Description': 'None'},
-                            'virtual joy text color': {'type': 'str', 'Description': 'The color of this joy\'s outfeed text.'},
-                            'physical joy text color': {'type': 'str', 'Description': 'The color of this joy\'s outfeed text.'},
-                            'virtual joy type': {'type': 'str', 'Description': 'This setting must be equal to "xbox" for now.'}
                             },
 
                 'Advanced': {
@@ -329,127 +234,33 @@ CATEGORIES = {
                 }
 
 
-# deprecated
-class Action_Logger:
-    def __init__(self, master, path, type='normal',title=None, vja=None):
+
+class GameHook(object):
+    def __init__(self, master, game):
         self.master = master
-        self.type = type
+        self.game = game
+        self.classpointer = {'TEKKEN 7': TEKKENBOT.GameHook}
+        self.hook = None
+        self.p1box = None
+        self.p2box = None
+        self.running = False
 
-        title = str(title) + "-{}".format(clock()) + ".csv"
+    def start_overlay(self, box):
+        for k,v in self.classpointer.items():
+            if k in self.game:
+                self.hook = v(self.master)
+                break
 
-        if type == 'comparison':
-            headers = ["#","Result (pj)", "Target (vj)"]
-        elif type == 'normal':
-            headers = ["#", "Result (pj)"]
-        else:
-            self.master.q2.put({'Warning': '"{}" is not a valid log type'.format(self.type)})
-            type = 'normal'
-            headers = ["#", "Result (pj)"]
-
-
-        self.csvfile = open('{}\\{}'.format(path, title), 'w', newline='')
-
-        self.dictwriter = csv.DictWriter(self.csvfile, fieldnames=headers)
-
-
-        self.dictwriter.writeheader()
-        self.row = 0
-        self.ca = []
-        self.current = 0
-        self.vjdata = vja
-        self.pjdata = []
-
-
-    def beg_string(self):
-        print("BEGIN STRING")
-        self.ca = []
-
-    def end_string(self):
-        print("END STRING. APPEND {} TO HISTORY".format(self.ca))
-        self.row += 1
-        if self.type == 'comparison':
-            self.dictwriter.writerow({'#': self.row, "Result (pj)": self.ca, "Target (vj)": self.vjdata})
-        elif self.type == 'normal':
-            self.dictwriter.writerow({'#': self.row, "Result": self.ca})
-        else:
-            self.master.q2.put({'Warning': '"{}" is not a valid log type'.format(self.type)})
-            self.type = 'normal'
-            self.dictwriter.writerow({'#': self.row, "Result": self.ca})
-
-
-    def add_to_string(self, item):
-        print("ADD {} TO STRING".format(item))
-        self.ca.append(item)
-
-    def close_log(self):
-        self.csvfile.close()
-
-    def __del__(self):
         try:
-            self.close_log()
+            self.hook.setup_textredirector(box)
+            self.hook.start_overlay()
+            self.running = True
+            return 1
         except Exception as e:
-            pass
+            return e
 
-# deprecated till future version. This gives user something to refer to while creating strings, using hotkeys, etc.
-# for now, users will have to use the Action Editor (they're making changes there anyway)
-class PopupDoc(tk.Toplevel):
-    def __init__(self, master, info):
-        super().__init__(master)
-        self.geometry("400x800")
-        self.wm_title("Action Reference (Read-Only)")
-        self.lift(master)
-
-        self.master = master
-        self.action_reference(info)
-
-    # def action_reference(self, info):
-    #     forbidden = ["None", None, ""]
-    #     settings = {}
-    #     tolookfor = ["play hotkey", "flip x axis hotkey"]
-    #     for k,v in info["Settings"].items():
-    #         if k in tolookfor:
-    #             settings[k] = v
-    #
-    #     hks = {}
-    #     for k,v in info["Actions"].items():
-    #         if v["Hotkey"] not in forbidden:
-    #             hks[k] = v["Hotkey"]
-    #
-    #     notations = {}
-    #     for k,v in info["Actions"].items():
-    #         if v["Notation"] not in forbidden:
-    #             notations[k] = v["Notation"]
-    #
-    #     strings = {}
-    #     for k,v in info["Actions"].items():
-    #         if v["String"] not in forbidden:
-    #             strings[k] = v["String"]
-    #
-    #     # textbox for main keys
-    #     tk.Label(self, text="Hotkeys", font="Verdana 12").pack(side="top")
-    #     hkbox = tk.Text(self, width=8, height=5, state='normal')
-    #     hkbox.pack(anchor='nw', side='top', padx=5, pady=10, fill='both', expand=1)
-    #     for iter, (k,v) in enumerate(settings.items()):
-    #         hkbox.insert("{}.0".format(str(iter+1)), k + ":\t" + v + "\n")
-    #     for iter1, (k,v) in enumerate(hks.items()):
-    #         hkbox.insert("{}.0".format(str(iter + iter1 + 1)), k + ":\t" + v + "\n")
-    #     hkbox.config(state='disabled')
-    #
-    #     tk.Label(self, text="Notations", font="Verdana 12").pack(side="top")
-    #     notationbox = tk.Text(self, width=16, height=5, state='normal')
-    #     notationbox.pack(anchor='s', side='top', padx=5, pady=10, fill='both', expand=1)
-    #     for iter, (k,v) in enumerate(notations.items()):
-    #         notationbox.insert("{}.0".format(str(iter + 1)), k + ":\t" + v + "\n")
-    #     notationbox.config(state='disabled')
-    #
-    #     tk.Label(self, text="Strings", font="Verdana 12").pack(side="top")
-    #     self.sbox = tk.Text(self, width=16, height=5, state='normal')
-    #     self.sbox.pack(anchor='s', side='top', padx=5, pady=10, fill='both', expand=1)
-    #     for iter, (k,v) in enumerate(strings.items()):
-    #         self.sbox.insert("{}.0".format(str(iter + 1)), k + ":\t" + str(v) + "\n")
-    #     self.sbox.config(state='disabled')
-    #
-    #     ttk.Button(self, text="Cancel", command=lambda: self.destroy()).pack(side='bottom', anchor='s', pady=5)
+    def stop_overlay(self):
+        self.hook.stop_overlay()
 
 
 # detailed report showing PJoy, VJoy, and detected USB devices plugged into PC
@@ -674,7 +485,7 @@ class Settings(tk.Toplevel):
         try:
             d = eval(new1)
         except SyntaxError as e:
-            self.master.q2.put({'error': e})
+            messagebox.showerror(title='Error', message=e)
             return
 
         try:
@@ -684,7 +495,7 @@ class Settings(tk.Toplevel):
             self.master.refresh()
 
         except SyntaxError as e:
-            self.master.q2.put({'error': e})
+            messagebox.showerror(title='Error', message=e)
 
 
 # Allows users to create their own actions
@@ -795,14 +606,14 @@ class Action_Editor(tk.Toplevel):
             try:
                 d = eval(d)
             except SyntaxError as e:
-                self.master.q2.put({'error': e})
+                messagebox.showerror(title='Error', message=e)
                 return
             try:
                 with open(self.datapath + "\\" + k, "w") as f:
                     f.write(str(d))
                     f.close()
             except Exception as e:
-                self.master.q2.put({'error': e})
+                messagebox.showerror(title='Error', message=e)
                 return
 
 
@@ -927,3 +738,29 @@ class AntiCheatPolicy(tk.Toplevel):
 
         cancelbtn = ttk.Button(btmframe, text="Cancel", command=self.destroy)
         cancelbtn.pack(side='right', padx=5, pady=5)
+
+
+class FrameDataTable(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.CreateUI()
+        # self.LoadTable()
+        # self.grid(sticky = (tk.N,tk.S,tk.W,tk.E))
+        # parent.grid_rowconfigure(0, weight = 1)
+        # parent.grid_columnconfigure(0, weight = 1)
+
+    def CreateUI(self):
+        tv = ttk.Treeview(self)
+        tv['columns'] = cols = ('#', 'input command', 'internal move id number', 'internal move name', 'attack type', 'startup frames', 'frame advantage on block', 'frame advantage on hit', 'frame advantage on counter hit', \
+                        'active frame connected on / total active frames', 'how well move tracks during startup', 'total number of frames in move', 'frames before attacker can act', 'frames before defender can act', 'additional move properties')
+        for c in cols:
+            tv.heading(c, text=c, anchor='w')
+            tv.column(c, anchor="center", width=50)
+
+        tv.grid(sticky = (tk.N,tk.S,tk.W,tk.E))
+        self.treeview = tv
+        self.grid_rowconfigure(0, weight = 1)
+        self.grid_columnconfigure(0, weight = 1)
+
+    def insert_row(self, args):
+        self.treeview.insert('', 'end', text=str(args), values=tuple(args))

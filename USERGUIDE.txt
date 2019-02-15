@@ -13,31 +13,23 @@ Application:
 
 Features:
 
-Virtual Joystick (VJ1, VJ2):
+Virtual Joystick (VJ):
 -installable driver to your PC.
 -Steam compatible.
--2 are built in for simulating player 1 and 2
+-Max of 2 can be used at a time.
+-Useful for simulating battle scenarios
 
-Physical Joystick (PJ1):
--The device you personally use
+Physical Joystick Reader:
+-The device you personally use can be read by the app whether using frame data or not.
 -You can use an Arcade Stick, XBOX Controller, or Keyboard.
 
 Action Editor:
 -Home for all of your Actions.
 -Each action can have a notation and string.
 
-VJ1/VJ2 Script:
--converts notation to its matching string of functions upon simulation.
-
-Simulations:
--Notation can be simulated in both scripts by looping it (runs until Stop is pressed) or
-by playing it once.
-
-VJ1/VJ2 Log:
--Notation from script(s) that is converted to input is output in String or Raw format. (See Action Editor below)
-
-PJ1 Log:
--Output from your own controller that is converted to String or Raw format.
+Input Logging:
+-Read events from your own controller and virtual controllers during training
+-You can read the controllers' string input, raw input, and frame input (Tekken only)
 
 
 Installation:
@@ -56,7 +48,6 @@ Installation:
 
 
 'Virtual Joystick Configuration:
-
 
 1) Launch the Sparlab app, then go to > Steam Client > Big Picture Mode > Settings > Controller Settings
 
@@ -216,11 +207,9 @@ Freq.: adjust every N reps
 
 In-app commands:
 
-Clear: removes all text in your Log.
-View Raw: converts new string output to its raw format.
-Disable Log: Disables output display in log.
+Clear: removes all text in your Input Logs.
 Delay Variables: these can be inserted into your script to simulate delay (in seconds).
-Flip X Axis: switches the directions of all functions that have an X Direction (e.g. 'dpr_d' --> 'dpl_d', 'la_dl' --> 'la_dr').
+Mirror input: switches the directions of all functions that have an X Direction (e.g. 'dpr_d' --> 'dpl_d', 'la_dl' --> 'la_dr').
 Turn VJoy On: plugs in your VJoy Device.
 
 

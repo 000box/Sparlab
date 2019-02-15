@@ -9,9 +9,9 @@ os.environ['TK_LIBRARY'] = r'C:\Users\John Ward\AppData\Local\Programs\Python\Py
 
 
 # Dependencies are automatically detected, but it might need fine tuning.
-build_exe_options = {"packages": ["os","tkinter","PIL","time","decimal","_input", "updater", "_output", "hook", "tools",
-                                "vjoy","multiprocessing", "collections", "sys", "datetime"],
-                        "include_files": ["LICENSE", ("driver", "driver"), "USERGUIDE.txt", "ANTICHEATPOLICY.txt", "sparlab_logo.ico",
+build_exe_options = {"packages": ["decimal","_input", "updater", "_output", "hook", "tools",
+                                "vjoy", "TekkenBot"],
+                        "include_files": ["LICENSE", ("driver", "driver"), "USERGUIDE.txt", "ANTICHEATPOLICY.txt", "sparlab_logo.ico", ("TekkenBot", "TekkenBot"),
                                         os.path.join(r'C:\Users\John Ward\AppData\Local\Programs\Python\Python36\DLLs', 'tcl86t.dll'),
                                         os.path.join(r'C:\Users\John Ward\AppData\Local\Programs\Python\Python36\DLLs', 'tk86t.dll')],
                         'include_msvcr': True}
@@ -23,8 +23,8 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(  name = "Sparlab",
-        version = "1.0.62",
+        version = "1.0.7",
         description = "Sparlab",
-        author = "John Ward",
+        author = "The Umensch Company",
         options = {"build_exe": build_exe_options},
         executables = [Executable("sparlab.py", base=base, icon = 'sparlab_logo.ico')])
