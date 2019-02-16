@@ -24,7 +24,6 @@ def GetPIDByName(process_name_in_bytes):
     count = 32
     while True:
         ProcessIds = (ctypes.wintypes.DWORD*count)()
-        print("processIDs: ", ProcessIds)
         cb = ctypes.sizeof(ProcessIds)
         BytesReturned = ctypes.wintypes.DWORD()
         if EnumProcesses(ctypes.byref(ProcessIds), cb, ctypes.byref(BytesReturned)):

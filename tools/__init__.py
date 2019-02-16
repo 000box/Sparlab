@@ -267,7 +267,6 @@ class GameHook(object):
 class DeviceReport(tk.Toplevel):
     def __init__(self, master, info):
         super().__init__(master)
-
         # self.geometry("{0}x{1}+0+0".format( \
         #     master.winfo_screenwidth()-pad, master.winfo_screenheight()-pad))
         self.geometry("800x600")
@@ -738,29 +737,3 @@ class AntiCheatPolicy(tk.Toplevel):
 
         cancelbtn = ttk.Button(btmframe, text="Cancel", command=self.destroy)
         cancelbtn.pack(side='right', padx=5, pady=5)
-
-
-class FrameDataTable(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.CreateUI()
-        # self.LoadTable()
-        # self.grid(sticky = (tk.N,tk.S,tk.W,tk.E))
-        # parent.grid_rowconfigure(0, weight = 1)
-        # parent.grid_columnconfigure(0, weight = 1)
-
-    def CreateUI(self):
-        tv = ttk.Treeview(self)
-        tv['columns'] = cols = ('#', 'input command', 'internal move id number', 'internal move name', 'attack type', 'startup frames', 'frame advantage on block', 'frame advantage on hit', 'frame advantage on counter hit', \
-                        'active frame connected on / total active frames', 'how well move tracks during startup', 'total number of frames in move', 'frames before attacker can act', 'frames before defender can act', 'additional move properties')
-        for c in cols:
-            tv.heading(c, text=c, anchor='w')
-            tv.column(c, anchor="center", width=50)
-
-        tv.grid(sticky = (tk.N,tk.S,tk.W,tk.E))
-        self.treeview = tv
-        self.grid_rowconfigure(0, weight = 1)
-        self.grid_columnconfigure(0, weight = 1)
-
-    def insert_row(self, args):
-        self.treeview.insert('', 'end', text=str(args), values=tuple(args))

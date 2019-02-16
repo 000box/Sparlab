@@ -176,7 +176,6 @@ class TekkenGameReader:
                 print("Tekken pid acquired: " + str(self.pid))
             else:
                 print("Tekken pid not acquired. Trying to acquire...")
-
             return gameSnapshot
 
         if (self.needReacquireModule):
